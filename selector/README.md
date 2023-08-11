@@ -1,4 +1,4 @@
-# route selector plugin
+# Route Selector Plugin
 
 An implementation of trpc-selector that provides trpc users with Polaris for routing and load balancing.
 ```go

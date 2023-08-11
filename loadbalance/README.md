@@ -1,4 +1,4 @@
-# load balancing plugin
+# Load Balancing Plugin
 
 Consistent hash or common hash load balancing method is used as follows:
 ```go
@@ -14,8 +14,6 @@ func main() {
 		client.WithServiceName("trpc.app.server.service"),
 		// Normal hash
 		// client.WithBalancerName("polaris_hash"),
-		// Consistent hash, support enumeration, please refer to
-		// https://git.woa.com/trpc-go/trpc-naming-polaris/blob/master/loadbalance/loadbalance.go#L19
 		client.WithBalancerName("polaris_ring_hash"),
 		// Hash key 
 		client.WithKey("your hash key"),
