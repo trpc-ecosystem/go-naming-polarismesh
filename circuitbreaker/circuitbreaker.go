@@ -41,7 +41,7 @@ func Setup(sdkCtx api.SDKContext, cfg *Config, setDefault bool) error {
 	if cfg != nil && cfg.ReportTimeout != nil {
 		minClientTimeout = *cfg.ReportTimeout
 	}
-	name := "polaris"
+	name := "polarismesh"
 	if cfg != nil && cfg.Name != "" {
 		name = cfg.Name
 	}

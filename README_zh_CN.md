@@ -9,7 +9,7 @@
 
 ```go
 import (
-    _ "trpc.group/trpc-go/trpc-naming-polaris"
+    _ "trpc.group/trpc-go/trpc-naming-polarismesh"
 )
 ```
 按后面章节配置 yaml。
@@ -18,7 +18,7 @@ import (
 ### `tRPC-Go 框架内（tRPC-Go 服务）`寻址
 ```go
 import (
-    _ "trpc.group/trpc-go/trpc-naming-polaris"
+    _ "trpc.group/trpc-go/trpc-naming-polarismesh"
 )
 
 func main() {
@@ -49,7 +49,7 @@ func main() {
 import (
     "trpc.group/trpc-go/trpc-go/naming/registry"
 
-    _ "trpc.group/trpc-go/trpc-naming-polaris"
+    _ "trpc.group/trpc-go/trpc-naming-polarismesh"
 )
 
 func main() {
@@ -99,7 +99,7 @@ opts := []client.Option{
     // 命名空间，不填写默认使用本服务所在环境 namespace
     client.WithNamespace("Development"),
     // 服务名
-    // client.WithTarget("polaris://trpc.app.server.service"),
+    // client.WithTarget("polarismesh://trpc.app.server.service"),
     client.WithServiceName("trpc.app.server.service"),
     // 设置被调服务环境
     client.WithCalleeEnvName("62a30eec"),
@@ -117,7 +117,7 @@ opts := []client.Option{
 ```yaml
 plugins:  # 插件配置
   registry:
-    polaris:                              # 北极星名字注册服务的配置
+    polarismesh:                              # 北极星名字注册服务的配置
       # register_self: true               # 是否进行服务自注册, 默认为 false
       heartbeat_interval: 3000            # 名字注册服务心跳上报间隔
       protocol: grpc                      # 名字服务远程交互协议类型
@@ -144,7 +144,7 @@ plugins:  # 插件配置
       #   campus: Shenzhen
       
   selector:   # 针对 trpc 框架服务发现的配置
-    polaris:  # 北极星服务发现的配置
+    polarismesh:  # 北极星服务发现的配置
       # debug: true                       # 开启 debug 日志
       # default: true                     # 是否设置为默认的 selector
       # enable_canary: false              # 开启金丝雀功能，默认 false 不开启
@@ -152,12 +152,12 @@ plugins:  # 插件配置
       # report_timeout: 1ms               # 默认 1ms，如果设置了，则下游超时，并且少于设置的值，则忽略错误不上报
       # connect_timeout: 1000             # 单位 ms，默认 1000ms，连接北极星后台服务的超时时间
       # message_timeout: 1s               # 类型为 time.Duration，从北极星后台接收一个服务信息的超时时间，默认为 1s
-      # log_dir: $HOME/polaris/log        # 北极星日志目录
+      # log_dir: $HOME/polarismesh/log        # 北极星日志目录
       protocol: grpc                      # 名字服务远程交互协议类型
       # join_point: default               # 接入名字服务使用的接入点，该选项会覆盖 address_list 和 cluster_service
       # address_list: ip1:port1,ip2:port2 # 北极星服务的地址
       # enable_servicerouter: true        # 是否开启服务路由，默认开启
-      # persistDir: $HOME/polaris/backup  # 服务缓存持久化目录，按照服务维度将数据持久化到磁盘
+      # persistDir: $HOME/polarismesh/backup  # 服务缓存持久化目录，按照服务维度将数据持久化到磁盘
       # service_expire_time: 24h          # 服务缓存的过期淘汰时间，类型为 time.Duration，如果不访问某个服务的时间超过这个时间，就会清除相关服务的缓存
       # loadbalance:
       #   name:  # 负载均衡类型，以下值可以采用 https://github.com/polarismesh/polaris-go/blob/v1.5.2/pkg/config/default.go#L181 中以 `DefaultLoadBalancer` 开头变量对应的任意字符串
@@ -210,7 +210,7 @@ https://polarismesh.cn/docs
 
 ## 多 selector 支持
 
-导入了 `trpc-naming-polaris` 包后，会自动注册一个名为 `"polaris"` 的 selector 插件，假如用户希望在请求另一地域服务时采用不同的 selector 配置，可以通过注册一个新的 selector 插件来实现，示例如下：
+导入了 `trpc-naming-polarismesh` 包后，会自动注册一个名为 `"polarismesh"` 的 selector 插件，假如用户希望在请求另一地域服务时采用不同的 selector 配置，可以通过注册一个新的 selector 插件来实现，示例如下：
 
 ### 方法一：代码+配置
 
@@ -224,35 +224,35 @@ https://polarismesh.cn/docs
 ```golang 
 import (
     "trpc.group/trpc-go/trpc-go/plugin"
-    "trpc.group/trpc-go/trpc-naming-polaris"
+    "trpc.group/trpc-go/trpc-naming-polarismesh"
 )
 
 func init() {
-    plugin.Register("polaris-customized1", &naming.SelectorFactory{})
-    plugin.Register("polaris-customized2", &naming.SelectorFactory{})
+    plugin.Register("polarismesh-customized1", &naming.SelectorFactory{})
+    plugin.Register("polarismesh-customized2", &naming.SelectorFactory{})
 }
 
 // 使用 service name 方式来寻址
 // 这些 client option 也可以在 trpc_go.yaml 中的 client service 部分进行配置
 func CallWithServiceName(ctx context.Context) error {
-    // 使用 "polaris-customized1" 的插件配置来访问下游
+    // 使用 "polarismesh-customized1" 的插件配置来访问下游
     rsp, err := proxy.Invoke(ctx, req,
         client.WithServiceName("trpc.app.server.service"),
-        // 以下四个 option 需要并用才能使 polaris-customized1 真正生效
-        client.WithDiscoveryName("polaris-customized1"),
-        client.WithServiceRouterName("polaris-customized1"),
+        // 以下四个 option 需要并用才能使 polarismesh-customized1 真正生效
+        client.WithDiscoveryName("polarismesh-customized1"),
+        client.WithServiceRouterName("polarismesh-customized1"),
         client.WithBalancerName("polaris_wr"), // 填默认 selector 配置中的负载均衡器
-        client.WithCircuitBreakerName("polaris-customized1"),
+        client.WithCircuitBreakerName("polarismesh-customized1"),
     )
     if err != nil { return err }
-    // 使用 "polaris-customized2" 的插件配置来访问下游
+    // 使用 "polarismesh-customized2" 的插件配置来访问下游
     rsp, err = proxy.Invoke(ctx, req,
         client.WithServiceName("trpc.app.server.service"),
-        // 以下四个 option 需要并用才能使 polaris-customized2 真正生效
-        client.WithDiscoveryName("polaris-customized2"),
-        client.WithServiceRouterName("polaris-customized2"),
+        // 以下四个 option 需要并用才能使 polarismesh-customized2 真正生效
+        client.WithDiscoveryName("polarismesh-customized2"),
+        client.WithServiceRouterName("polarismesh-customized2"),
         client.WithBalancerName("polaris_wr"), // 填默认 selector 配置中的负载均衡器
-        client.WithCircuitBreakerName("polaris-customized2"),
+        client.WithCircuitBreakerName("polarismesh-customized2"),
     )
     if err != nil { return err }
 }
@@ -260,13 +260,13 @@ func CallWithServiceName(ctx context.Context) error {
 // 使用 target 方式来寻址
 // 这些 client option 也可以在 trpc_go.yaml 中的 client service 部分进行配置
 func CallWithTarget(ctx context.Context) error {
-    // 使用 "polaris-customized1" 的插件配置来访问下游
+    // 使用 "polarismesh-customized1" 的插件配置来访问下游
     rsp, err := proxy.Invoke(ctx, req,
-        client.WithTarget("polaris-customized1://trpc.app.server.service"))
+        client.WithTarget("polarismesh-customized1://trpc.app.server.service"))
     if err != nil { return err }
-    // 使用 "polaris-customized2" 的插件配置来访问下游
+    // 使用 "polarismesh-customized2" 的插件配置来访问下游
     rsp, err = proxy.Invoke(ctx, req,
-        client.WithTarget("polaris-customized2://trpc.app.server.service"))
+        client.WithTarget("polarismesh-customized2://trpc.app.server.service"))
     if err != nil { return err }
 }
 ```
@@ -281,10 +281,10 @@ func CallWithTarget(ctx context.Context) error {
 client:  # 客户端调用的后端配置
   service:  # 针对单个后端的配置
     - name: trpc.app.server.service  # 后端服务的 service name
-      discovery: polaris-customized1
-      servicerouter: polaris-customized1
+      discovery: polarismesh-customized1
+      servicerouter: polarismesh-customized1
       loadbalance: polaris_wr # 填默认 selector 配置中的负载均衡器
-      circuitbreaker: polaris-customized1
+      circuitbreaker: polarismesh-customized1
       network: tcp  # 后端服务的网络类型 tcp udp 配置优先
       protocol: trpc  # 应用层协议 trpc http
       timeout: 1000   # 请求最长处理时间
@@ -298,7 +298,7 @@ client:  # 客户端调用的后端配置
     - name: trpc.app.server.service  # 后端服务的 service name
       network: tcp  # 后端服务的网络类型 tcp udp 配置优先
       protocol: trpc  # 应用层协议 trpc http
-      target: polaris-customized1://trpc.app.server.service  # 请求服务地址
+      target: polarismesh-customized1://trpc.app.server.service  # 请求服务地址
       timeout: 1000   # 请求最长处理时间
 ```
 
@@ -307,33 +307,33 @@ client:  # 客户端调用的后端配置
 ```yaml
 plugins:                                             
   selector:                                         
-    polaris:
+    polarismesh:
       protocol: grpc
       default: true # 设置为默认的 selector
       join_point: default
       # 不同 selector 最好把 persistDir 写为不同的值以免互相干扰
-      persistDir: $HOME/polaris/backup  # 服务缓存持久化目录，按照服务维度将数据持久化到磁盘
+      persistDir: $HOME/polarismesh/backup  # 服务缓存持久化目录，按照服务维度将数据持久化到磁盘
       # log_dir 只需设置一个即可, 以为北极星 sdk 的日志是全局唯一的, 多个 log_dir 存在时, 后者会覆盖前者
-      log_dir: $HOME/polaris/log        # 北极星日志目录
+      log_dir: $HOME/polarismesh/log        # 北极星日志目录
       # loadbalance: # 负载均衡器和多 selector 的关联较弱, 只在设置为 default=true 的 selector 中进行配置即可
       #   name: # 负载均衡类型
       #     - polaris_wr         # 加权随机，如果默认设置为寻址方式，则数组的第一个则为默认的负载均衡
       #     - polaris_hash       # hash 算法
       #     - polaris_ring_hash  # 一致性 hash 算
       # 任何其他的配置，见 `配置完整示例` 一节
-    polaris-customized1:
+    polarismesh-customized1:
       protocol: grpc
       default: false # 不设置为默认的 selector
       join_point: point1
       # 不同 selector 最好把 persistDir 写为不同的值以免互相干扰
-      persistDir: $HOME/polaris-customized1/backup  # 服务缓存持久化目录，按照服务维度将数据持久化到磁盘
+      persistDir: $HOME/polarismesh-customized1/backup  # 服务缓存持久化目录，按照服务维度将数据持久化到磁盘
       # 任何其他的配置，见 `配置完整示例` 一节
-    polaris-customized2:
+    polarismesh-customized2:
       protocol: grpc
       default: false # 不设置为默认的 selector
       join_point: point2
       # 不同 selector 最好把 persistDir 写为不同的值以免互相干扰
-      persistDir: $HOME/polaris-customized2/backup  # 服务缓存持久化目录，按照服务维度将数据持久化到磁盘
+      persistDir: $HOME/polarismesh-customized2/backup  # 服务缓存持久化目录，按照服务维度将数据持久化到磁盘
       # 任何其他的配置，见 `配置完整示例` 一节
 ```
 
@@ -344,16 +344,16 @@ plugins:
 ```golang
 
 import (
-    "trpc.group/trpc-go/trpc-naming-polaris"
+    "trpc.group/trpc-go/trpc-naming-polarismesh"
 )
 
 func init() {
 	addrs := "xxx,yyy"
-    logDir1 := "polaris-customized1/log"
-    persistDir1 := "polaris-customized1/backup"
+    logDir1 := "polarismesh-customized1/log"
+    persistDir1 := "polarismesh-customized1/backup"
     dft1 := true
     if err := naming.SetupWithConfig(&naming.Config{
-        Name: "polaris-customized1",
+        Name: "polarismesh-customized1",
         AddressList: addrs,
         Default: &dft1, // 设置为默认的
         // 使用 client.WithServiceName 方式寻址时
@@ -365,10 +365,10 @@ func init() {
     }); err != nil { /* 错误处理 */ }
 
 	addrs2 := "zzz"
-    persistDir2 := "polaris-customized2/backup"
+    persistDir2 := "polarismesh-customized2/backup"
     dft2 := false
     if err := naming.SetupWithConfig(&naming.Config{
-        Name: "polaris-customized2",
+        Name: "polarismesh-customized2",
         AddressList: addrs2,
         Default: &dft2, // 设置为非默认的
         PersistDir: &persistDir2,
@@ -378,40 +378,40 @@ func init() {
 
 // 使用 service name 方式来寻址
 func CallWithServiceName(ctx context.Context) error {
-    // 使用 "polaris-customized1" 的插件配置来访问下游
+    // 使用 "polarismesh-customized1" 的插件配置来访问下游
     rsp, err := proxy.Invoke(ctx, req,
         client.WithServiceName("trpc.app.server.service"),
-        client.WithDiscoveryName("polaris-customized1"),
-        client.WithServiceRouterName("polaris-customized1"),
+        client.WithDiscoveryName("polarismesh-customized1"),
+        client.WithServiceRouterName("polarismesh-customized1"),
         client.WithBalancerName("polaris_wr"), // 填默认 selector 配置中的负载均衡器
-        client.WithCircuitBreakerName("polaris-customized1"),
+        client.WithCircuitBreakerName("polarismesh-customized1"),
     )
     if err != nil { return err }
-    // 使用 "polaris-customized2" 的插件配置来访问下游
+    // 使用 "polarismesh-customized2" 的插件配置来访问下游
     rsp, err = proxy.Invoke(ctx, req,
         client.WithServiceName("trpc.app.server.service"),
-        client.WithDiscoveryName("polaris-customized2"),
-        client.WithServiceRouterName("polaris-customized2"),
+        client.WithDiscoveryName("polarismesh-customized2"),
+        client.WithServiceRouterName("polarismesh-customized2"),
         client.WithBalancerName("polaris_wr"), // 填默认 selector 配置中的负载均衡器
-        client.WithCircuitBreakerName("polaris-customized2"),
+        client.WithCircuitBreakerName("polarismesh-customized2"),
     )
     if err != nil { return err }
 }
 
 // 使用 target 方式来寻址
 func CallWithTarget(ctx context.Context) error {
-    // 使用 "polaris-customized1" 的插件配置来访问下游
+    // 使用 "polarismesh-customized1" 的插件配置来访问下游
     rsp, err := proxy.Invoke(ctx, req,
-        client.WithTarget("polaris-customized1://trpc.app.server.service"))
+        client.WithTarget("polarismesh-customized1://trpc.app.server.service"))
     if err != nil { return err }
-    // 使用 "polaris-customized2" 的插件配置来访问下游
+    // 使用 "polarismesh-customized2" 的插件配置来访问下游
     rsp, err = proxy.Invoke(ctx, req,
-        client.WithTarget("polaris-customized2://trpc.app.server.service"))
+        client.WithTarget("polarismesh-customized2://trpc.app.server.service"))
     if err != nil { return err }
 }
 ```
 
-注：trpc 插件可能不支持部分 polaris 新功能的配置，此时业务可自行创建 polaris sdk 配置并通过 naming.Config.PolarisConig 字段提供给 trpc 插件。此配置会被视为基础配置，其他通过trpc标准接口添加的配置项会覆盖此配置的对应配置项，最后使用配置创建 polaris api 对象。
+注：trpc 插件可能不支持部分北极星新功能的配置，此时业务可自行创建北极星 sdk 配置并通过 naming.Config.PolarisConig 字段提供给 trpc 插件。此配置会被视为基础配置，其他通过trpc标准接口添加的配置项会覆盖此配置的对应配置项，最后使用配置创建北极星 API 对象。
 
 ```golang
 // 创建北极星配置文件
@@ -419,10 +419,10 @@ cfg := api.NewConfiguration()
 // 添加北极星埋点、限流 Server、等其他配置
 addresses := []string{"127.0.0.1:8081"}
 cfg.GetGlobal().GetServerConnector().SetAddresses(addresses)
-cfg.GetProvider().GetRateLimit().GetRateLimitCluster().SetService("polaris.metric.v2.test")
+cfg.GetProvider().GetRateLimit().GetRateLimitCluster().SetService("polarismesh.metric.v2.test")
 // 初始化
 if err := naming.SetupWithConfig(&naming.Config{
-    Name: "polaris-customized1",
+    Name: "polarismesh-customized1",
     Loadbalance: naming.LoadbalanceConfig{Name: []string{"polaris_ws"}},
     PolarisConfig: cfg,
 }); err != nil { /* 错误处理 */ }
@@ -450,19 +450,19 @@ if err := naming.SetupWithConfig(&naming.Config{
 
 期望通过 `WithServiceName` 的方式来完成北极星寻址的话, 需要同时满足以下几个条件:
 
-* 正确配置本插件: 1. 包含匿名 import, 2. 插件配置中有 polaris selector
+* 正确配置本插件: 1. 包含匿名 import, 2. 插件配置中有 polaris mesh selector
 * 代码 option 不要带 `client.WithTarget`, `trpc_go.yaml` 的客户端配置中也不要带 `target` 字段
 
-这样就实现了 `WithServiceName` 的寻址方式, 此时你会发现除了插件配置中的 polaris selector 有北极星相关信息, 客户端配置中任何地方不再需要有 polaris 字样, 但是实际确是使用的北极星插件能力进行的寻址, 这种现象的原因是北极星插件替换了 trpc-go 框架中的一些默认组件为北极星插件的实现, 导致客户端以几乎无感知的形式完成北极星寻址
+这样就实现了 `WithServiceName` 的寻址方式, 此时你会发现除了插件配置中的 polaris mesh selector 有北极星相关信息, 客户端配置中任何地方不再需要有 polaris 字样, 但是实际确是使用的北极星插件能力进行的寻址, 这种现象的原因是北极星插件替换了 trpc-go 框架中的一些默认组件为北极星插件的实现, 导致客户端以几乎无感知的形式完成北极星寻址
 
 #### `WithTarget`
 
 期望通过 `WithTarget` 的方式来完成北极星寻址的话, 需要同时满足以下条件:
 
-* 正确配置本插件: 1. 包含匿名 import, 2. 插件配置中有 polaris selector
+* 正确配置本插件: 1. 包含匿名 import, 2. 插件配置中有 polaris mesh selector
 * 二选一 (同时存在时, 代码 option 的优先级高于配置):
-  * 代码 option 带 `client.WithTarget("polaris://trpc.app.server.service")`
-  * `trpc_go.yaml` 的客户端配置中带 `target` 字段: `target: polaris://trpc.app.server.service`
+  * 代码 option 带 `client.WithTarget("polarismesh://trpc.app.server.service")`
+  * `trpc_go.yaml` 的客户端配置中带 `target` 字段: `target: polarismesh://trpc.app.server.service`
 
 这样就实现了 `WithTarget` 的寻址方式, 这里你会在 `target` 处看到明确的 polaris 字样, 明确地感知到这个客户端在使用北极星寻址
 
@@ -472,17 +472,17 @@ if err := naming.SetupWithConfig(&naming.Config{
 
 ```bash
 "trpc.app.server.service"   =>  (trpc-go).selector.TrpcSelector.Selector        => ip:port  # WithServiceName
-"trpc.app.server.service"   =>  (trpc-naming-polaris).selector.Selector.Select  => ip:port  # WithTarget
+"trpc.app.server.service"   =>  (trpc-naming-polarismesh).selector.Selector.Select  => ip:port  # WithTarget
 ```
 
 在配置了北极星 selector 插件之后, `(trpc-go).selector.TrpcSelector.Selector` 内部使用到的 `discovery, servicerouter, loadbalance` 这三个模块会被替换为北极星插件自己的实现, 所以实际的效果其实为:
 
 ```bash
-"trpc.app.server.service" =>  (trpc-naming-polaris).discovery.Discovery.List
-                           =>  (trpc-naming-polaris).servicerouter.ServiceRouter.Filter        
-                            =>  (trpc-naming-polaris).loadbalance.WRLoadBalancer.Select => ip:port  # WithServiceName
+"trpc.app.server.service" =>  (trpc-naming-polarismesh).discovery.Discovery.List
+                           =>  (trpc-naming-polarismesh).servicerouter.ServiceRouter.Filter        
+                            =>  (trpc-naming-polarismesh).loadbalance.WRLoadBalancer.Select => ip:port  # WithServiceName
 
-"trpc.app.server.service"   =>  (trpc-naming-polaris).selector.Selector.Select          => ip:port  # WithTarget
+"trpc.app.server.service"   =>  (trpc-naming-polarismesh).selector.Selector.Select          => ip:port  # WithTarget
 ```
 
 也就是说: `WithServiceName` 最终使用的是北极星插件的 `discovery, servicerouter, loadbalance` 三模块组合, 而 `WithTarget` 最终使用的是北极星插件的 `selector` 模块

@@ -1,6 +1,6 @@
 # Route Selector Plugin
 
-An implementation of trpc-selector that provides trpc users with Polaris for routing and load balancing.
+An implementation of trpc-selector that provides trpc users with polaris mesh for routing and load balancing.
 ```go
 package main
 
@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"trpc.group/trpc-go/trpc-go/client"
-	"trpc.group/trpc-go/trpc-naming-polaris/selector"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/selector"
 
 	pb "trpc.group/trpcprotocol/test/helloworld"
 
@@ -29,7 +29,7 @@ func main() {
 
 	opts := []client.Option{
 		client.WithNamespace("Development"),
-		client.WithTarget("polaris://trpc.app.server.service"),
+		client.WithTarget("polarismesh://trpc.app.server.service"),
 	}
 
 	clientProxy := pb.NewGreeterClientProxy(opts...)

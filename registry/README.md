@@ -2,17 +2,17 @@
 
 ## How to use
 ```go
-import _ "trpc.group/trpc-go/trpc-naming-polaris/registry"
+import _ "trpc.group/trpc-go/trpc-naming-polarismesh/registry"
 ```
 
 ## A complete Configuration
 ```yaml
 plugins:  # tRPC-Go plugin configuration.
   registry:  # Registry has its own plugin type.
-    polaris:  # This Registry is based on polaris.
+    polarismesh:  # This Registry is based on polaris mesh.
       register_self: true  # Whether to register, default as false.
       heartbeat_interval: 3000  # The interval to report heartbeat, must be provided.
-      debug: true  # Whether to enable the debug log of Polaris sdk, default as false.
+      debug: true  # Whether to enable the debug log of polaris mesh sdk, default as false.
       instance_location:  # The location of the registered instance.
         region: China
         zone: Guangdong
@@ -28,6 +28,6 @@ plugins:  # tRPC-Go plugin configuration.
             # Enable set (both this line and the next line need to be set to fully enable set).
             internal-enable-set: Y
             internal-set-name: xx.yy.sz  # Set service set name.
-            key1: val1  # For other metadata, etc., please refer to Polaris related documents.
+            key1: val1  # For other metadata, etc., please refer to polaris mesh related documents.
             key2: val2
 ```

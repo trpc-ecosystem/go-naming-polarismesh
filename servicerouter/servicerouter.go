@@ -98,7 +98,7 @@ func Setup(sdkCtx api.SDKContext, cfg *Config, setDefault bool) error {
 	}
 	s.Canary = canary.(servicerouter.ServiceRouter)
 
-	name := "polaris"
+	name := "polarismesh"
 	if cfg != nil && cfg.Name != "" {
 		name = cfg.Name
 	}
@@ -382,7 +382,7 @@ func (s *ServiceRouter) Filter(serviceName string,
 	for _, o := range opt {
 		o(opts)
 	}
-	log.Tracef("[NAMING-POLARIS] servicerouter options: %+v", opts)
+	log.Tracef("[NAMING-POLARISMESH] servicerouter options: %+v", opts)
 	sourceService := &model.ServiceInfo{
 		Service:   opts.SourceServiceName,
 		Namespace: opts.SourceNamespace,

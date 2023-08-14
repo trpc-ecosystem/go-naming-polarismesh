@@ -15,7 +15,7 @@ import (
 
 	"trpc.group/trpc-go/trpc-go/healthcheck"
 	"trpc.group/trpc-go/trpc-go/naming/registry"
-	"trpc.group/trpc-go/trpc-naming-polaris/internal/metrics"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/internal/metrics"
 
 	"github.com/polarismesh/polaris-go/api"
 	plog "github.com/polarismesh/polaris-go/pkg/log"

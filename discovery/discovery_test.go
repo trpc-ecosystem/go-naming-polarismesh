@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"trpc.group/trpc-go/trpc-go/naming/discovery"
-	"trpc.group/trpc-go/trpc-naming-polaris/mock/mock_api"
-	"trpc.group/trpc-go/trpc-naming-polaris/mock/mock_model"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/mock/mock_api"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/mock/mock_model"
 
 	"github.com/golang/mock/gomock"
 	"github.com/polarismesh/polaris-go/pkg/model"
@@ -24,9 +24,9 @@ func TestSetup(t *testing.T) {
 
 	m := mock_api.NewMockSDKContext(ctrl)
 
-	assert.Nil(t, Setup(m, &Config{Name: "polaris"}, true))
+	assert.Nil(t, Setup(m, &Config{Name: "polarismesh"}, true))
 
-	assert.NotNil(t, discovery.Get("polaris"))
+	assert.NotNil(t, discovery.Get("polarismesh"))
 	assert.NotNil(t, discovery.DefaultDiscovery)
 }
 

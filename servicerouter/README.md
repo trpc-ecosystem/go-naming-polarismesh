@@ -20,7 +20,7 @@ import (
     "trpc.group/trpc-go/trpc-go/client"
     "trpc.group/trpc-go/trpc-go/log"
     "trpc.group/trpc-go/trpc-go/naming/registry"
-    "trpc.group/trpc-go/trpc-naming-polaris/servicerouter"
+    "trpc.group/trpc-go/trpc-naming-polarismesh/servicerouter"
 
     pb "trpc.group/trpcprotocol/test/helloworld"
 )

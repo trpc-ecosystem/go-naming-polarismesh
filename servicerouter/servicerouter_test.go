@@ -21,10 +21,10 @@ import (
 	"github.com/polarismesh/specification/source/go/api/v1/traffic_manage"
 	"github.com/stretchr/testify/assert"
 
-	"trpc.group/trpc-go/trpc-naming-polaris/mock/mock_api"
-	"trpc.group/trpc-go/trpc-naming-polaris/mock/mock_model"
-	"trpc.group/trpc-go/trpc-naming-polaris/mock/mock_plugin"
-	"trpc.group/trpc-go/trpc-naming-polaris/mock/mock_servicerouter"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/mock/mock_api"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/mock/mock_model"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/mock/mock_plugin"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/mock/mock_servicerouter"
 )
 
 func TestSetup(t *testing.T) {
@@ -35,8 +35,8 @@ func TestSetup(t *testing.T) {
 	pluginer.EXPECT().GetPlugin(gomock.Any(), gomock.Any()).Return(plugin, nil).AnyTimes()
 	m := mock_api.NewMockSDKContext(ctrl)
 	m.EXPECT().GetPlugins().Return(pluginer).AnyTimes()
-	assert.Nil(t, Setup(m, &Config{Name: "polaris"}, true))
-	assert.NotNil(t, tsr.Get("polaris"))
+	assert.Nil(t, Setup(m, &Config{Name: "polarismesh"}, true))
+	assert.NotNil(t, tsr.Get("polarismesh"))
 }
 
 func TestInstanceToNode(t *testing.T) {

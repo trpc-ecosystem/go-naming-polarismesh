@@ -15,8 +15,8 @@ import (
 	"trpc.group/trpc-go/trpc-go/errs"
 	"trpc.group/trpc-go/trpc-go/naming/circuitbreaker"
 	"trpc.group/trpc-go/trpc-go/naming/registry"
-	"trpc.group/trpc-go/trpc-naming-polaris/mock/mock_api"
-	"trpc.group/trpc-go/trpc-naming-polaris/mock/mock_model"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/mock/mock_api"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/mock/mock_model"
 
 	"github.com/golang/mock/gomock"
 	"github.com/polarismesh/polaris-go/api"
@@ -29,8 +29,8 @@ func TestSetUp(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	m := mock_api.NewMockSDKContext(ctrl)
-	assert.Nil(t, Setup(m, &Config{Name: "polaris"}, true))
-	assert.NotNil(t, circuitbreaker.Get("polaris"))
+	assert.Nil(t, Setup(m, &Config{Name: "polarismesh"}, true))
+	assert.NotNil(t, circuitbreaker.Get("polarismesh"))
 	assert.NotNil(t, circuitbreaker.DefaultCircuitBreaker)
 }
 

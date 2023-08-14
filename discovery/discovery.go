@@ -24,7 +24,7 @@ func Setup(sdkCtx api.SDKContext, cfg *Config, setDefault bool) error {
 		cfg:      cfg,
 	}
 
-	name := "polaris"
+	name := "polarismesh"
 	if cfg != nil && cfg.Name != "" {
 		name = cfg.Name
 	}

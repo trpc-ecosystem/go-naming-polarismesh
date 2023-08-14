@@ -6,5 +6,5 @@
 
 package naming
 
-// Version polaris version
+// Version is the polaris mesh version.
 const Version = "v0.2.7"

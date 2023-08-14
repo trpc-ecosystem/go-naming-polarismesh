@@ -3,8 +3,8 @@
 ```yaml
 # Circuit breaker is configured under selector plugin.
 selector:
-  # This selector is based on polaris.
-  polaris:
+  # This selector is based on polaris mesh.
+  polarismesh:
     # Key word for circuit breaker.
     circuitbreaker:
       # Circuit breaker check period, default as 30s.

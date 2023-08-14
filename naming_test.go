@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"trpc.group/trpc-go/trpc-go"
-	_ "trpc.group/trpc-go/trpc-naming-polaris/registry"
+	_ "trpc.group/trpc-go/trpc-naming-polarismesh/registry"
 
 	"github.com/polarismesh/polaris-go/api"
 	"github.com/polarismesh/polaris-go/pkg/config"
@@ -28,11 +28,11 @@ func TestSelectorFactory_Setup(t *testing.T) {
 	cfgstr := `
 plugins:
   selector:
-    polaris:
+    polarismesh:
       address_list: 127.0.0.1:0
       enable_servicerouter: true
-      persistDir: /tmp/polaris/backup
-      log_dir: /tmp/polaris/log
+      persistDir: /tmp/polarismesh/backup
+      log_dir: /tmp/polarismesh/log
       debug: false
       discovery:
         refresh_interval: 10000
@@ -40,9 +40,9 @@ plugins:
 	cfg := trpc.Config{}
 	err := yaml.Unmarshal([]byte(cfgstr), &cfg)
 	assert.Nil(t, err)
-	polarisCfg := cfg.Plugins["selector"]["polaris"]
+	polarisCfg := cfg.Plugins["selector"]["polarismesh"]
 	pluginFac := &SelectorFactory{}
-	err = pluginFac.Setup("polaris", &polarisCfg)
+	err = pluginFac.Setup("polarismesh", &polarisCfg)
 	assert.Nil(t, err)
 	assert.NotNil(t, pluginFac.GetSDKCtx())
 }
@@ -50,8 +50,8 @@ plugins:
 func Test_SetupWithConfig(t *testing.T) {
 	var (
 		enableServiceRouter = true
-		persisDir           = "/tmp/polaris/backup"
-		logDir              = "/tmp/polaris/log"
+		persisDir           = "/tmp/polarismesh/backup"
+		logDir              = "/tmp/polarismesh/log"
 	)
 	require.Nil(t, SetupWithConfig(&Config{
 		AddressList:         "127.0.0.1:0",
@@ -66,8 +66,8 @@ func Test_SetupWithConfig(t *testing.T) {
 func Test_SetupWithPolarisConfig(t *testing.T) {
 	var (
 		enableServiceRouter = true
-		persisDir           = "/tmp/polaris/backup"
-		logDir              = "/tmp/polaris/log/polaris_config"
+		persisDir           = "/tmp/polarismesh/backup"
+		logDir              = "/tmp/polarismesh/log/polaris_config"
 		address             = "not_exist"
 	)
 	os.RemoveAll(logDir)
@@ -101,7 +101,7 @@ address_list: 127.0.0.1:0
 report_timeout: 1s
 timeout: 1000
 debug: false
-persistDir: /tmp/polaris/backup
+persistDir: /tmp/polarismesh/backup
 join_point: default
 service_expire_time: 12h
 connect_timeout:
@@ -162,7 +162,7 @@ instance_location:                # 注册实例的地址位置信息
 	// 检查LocalCache配置
 	discovery := sdkCtx.GetConfig().GetConsumer().GetLocalCache()
 	assert.Equal(t, 10000*time.Millisecond, discovery.GetServiceRefreshInterval())
-	assert.Equal(t, "/tmp/polaris/backup", discovery.GetPersistDir())
+	assert.Equal(t, "/tmp/polarismesh/backup", discovery.GetPersistDir())
 	loadBalanceCfg, ok := sdkCtx.GetConfig().GetConsumer().GetLoadbalancer().
 		GetPluginConfig(config.DefaultLoadBalancerRingHash).(*ringhash.Config)
 	require.True(t, ok)
@@ -263,23 +263,23 @@ func TestConfig_UnmarshalYAML(t *testing.T) {
 				cfgstr := `
 plugins:
   selector:
-    polaris:
+    polarismesh:
       address_list: 127.0.0.1:0
-      log_dir: /tmp/polaris/log
+      log_dir: /tmp/polarismesh/log
       discovery:
         refresh_interval: 10000
 `
 				cfg := trpc.Config{}
 				err := yaml.Unmarshal([]byte(cfgstr), &cfg)
 				assert.Nil(t, err)
-				polarisCfg := cfg.Plugins["selector"]["polaris"]
+				polarisCfg := cfg.Plugins["selector"]["polarismesh"]
 				return &polarisCfg
 			}()},
 			false,
 			&Config{
-				LogDir: String("/tmp/polaris/log"),
+				LogDir: String("/tmp/polarismesh/log"),
 				Logs: &Logs{
-					DirPath:    "/tmp/polaris/log",
+					DirPath:    "/tmp/polarismesh/log",
 					Level:      "default",
 					MaxBackups: plog.DefaultRotationMaxBackups,
 					MaxSize:    plog.DefaultRotationMaxSize,
@@ -296,7 +296,7 @@ plugins:
 				cfgstr := `
 plugins:
   selector:
-    polaris:
+    polarismesh:
       address_list: 127.0.0.1:0
       discovery:
         refresh_interval: 10000
@@ -304,7 +304,7 @@ plugins:
 				cfg := trpc.Config{}
 				err := yaml.Unmarshal([]byte(cfgstr), &cfg)
 				assert.Nil(t, err)
-				polarisCfg := cfg.Plugins["selector"]["polaris"]
+				polarisCfg := cfg.Plugins["selector"]["polarismesh"]
 				return &polarisCfg
 			}()},
 			false,
@@ -321,7 +321,7 @@ plugins:
 				cfgstr := `
 plugins:
   selector:
-    polaris:
+    polarismesh:
       address_list: 127.0.0.1:0
       logs:
         level: debug
@@ -331,13 +331,13 @@ plugins:
 				cfg := trpc.Config{}
 				err := yaml.Unmarshal([]byte(cfgstr), &cfg)
 				assert.Nil(t, err)
-				polarisCfg := cfg.Plugins["selector"]["polaris"]
+				polarisCfg := cfg.Plugins["selector"]["polarismesh"]
 				return &polarisCfg
 			}()},
 			false,
 			&Config{
 				Logs: &Logs{
-					DirPath:    "./polaris/log",
+					DirPath:    plog.DefaultLogRotationRootDir,
 					Level:      "debug",
 					MaxBackups: plog.DefaultRotationMaxBackups,
 					MaxSize:    plog.DefaultRotationMaxSize,
@@ -354,7 +354,7 @@ plugins:
 				cfgstr := `
 plugins:
   selector:
-    polaris:
+    polarismesh:
       address_list: 127.0.0.1:0
       discovery:
         refresh_interval: 10000
@@ -362,7 +362,7 @@ plugins:
 				cfg := trpc.Config{}
 				err := yaml.Unmarshal([]byte(cfgstr), &cfg)
 				assert.Nil(t, err)
-				polarisCfg := cfg.Plugins["selector"]["polaris"]
+				polarisCfg := cfg.Plugins["selector"]["polarismesh"]
 				return &polarisCfg
 			}()},
 			false,

@@ -16,7 +16,7 @@ import (
 	"trpc.group/trpc-go/trpc-go/naming/registry"
 	"trpc.group/trpc-go/trpc-go/plugin"
 
-	"trpc.group/trpc-go/trpc-naming-polaris/mock/mock_api"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/mock/mock_api"
 
 	"github.com/golang/mock/gomock"
 	"github.com/polarismesh/polaris-go/api"
@@ -52,7 +52,7 @@ func TestConfigSetup(t *testing.T) {
 	cfgstr := `
 plugins:
   registry:
-    polaris:
+    polarismesh:
       connect_timeout: 1000
       message_timeout: 1s
       join_point: default
@@ -62,9 +62,9 @@ plugins:
 	cfg := trpc.Config{}
 	err := yaml.Unmarshal([]byte(cfgstr), &cfg)
 	assert.Nil(t, err)
-	polarisCfg := cfg.Plugins["registry"]["polaris"]
+	polarisCfg := cfg.Plugins["registry"]["polarismesh"]
 	pluginFac := &RegistryFactory{}
-	err = pluginFac.Setup("polaris", &polarisCfg)
+	err = pluginFac.Setup("polarismesh", &polarisCfg)
 	assert.Nil(t, err)
 	require.NotNil(t, pluginFac.GetSDKCtx())
 }
@@ -104,7 +104,7 @@ func TestRegisterDeRegister(t *testing.T) {
 }
 
 func TestFlexDepends(t *testing.T) {
-	require.Equal(t, []string{"selector-polaris"}, (&RegistryFactory{}).FlexDependsOn())
+	require.Equal(t, []string{"selector-polarismesh"}, (&RegistryFactory{}).FlexDependsOn())
 }
 
 func TestRegistryInstanceLocation(t *testing.T) {
@@ -141,7 +141,7 @@ service:
     namespace: Development
     bind_address: 127.0.0.1:8080
 `, region, zone, campus, t.Name())), &node))
-	require.Nil(t, (&RegistryFactory{}).Setup("polaris", &plugin.YamlNodeDecoder{Node: &node}))
+	require.Nil(t, (&RegistryFactory{}).Setup("polarismesh", &plugin.YamlNodeDecoder{Node: &node}))
 
 	r := registry.Get(t.Name())
 	require.NotNil(t, r)
@@ -225,7 +225,7 @@ service:
     weight: %d
     bind_address: 127.0.0.1:8080
 `, t.Name(), weight)), &node))
-	require.Nil(t, (&RegistryFactory{}).Setup("polaris", &plugin.YamlNodeDecoder{Node: &node}))
+	require.Nil(t, (&RegistryFactory{}).Setup("polarismesh", &plugin.YamlNodeDecoder{Node: &node}))
 	r := registry.Get(t.Name())
 	require.Nil(t, r.Register(t.Name()))
 }
