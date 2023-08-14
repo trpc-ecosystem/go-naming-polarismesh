@@ -1,1 +1,1 @@
-# service discovery plugin
+# Service Discovery Plugin
