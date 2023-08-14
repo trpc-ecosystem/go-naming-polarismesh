@@ -3,7 +3,7 @@
 Consistent hash or common hash load balancing method is used as follows:
 ```go
 import (
-	_ "trpc.group/trpc-go/trpc-naming-polaris"
+	_ "trpc.group/trpc-go/trpc-naming-polarismesh"
 )
 
 func main() {

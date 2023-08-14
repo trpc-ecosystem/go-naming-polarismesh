@@ -1,16 +1,16 @@
 [TOC]
 
-# tRPC-Go Polaris Plugin
+# tRPC-Go Polaris Mesh Plugin
 
 This Plugin consists of Service Registry, Service Discovery, Load Balance and Circuit Breaker.
 You can integrate it to your project quickly by yaml config.
 
 ## How to Use
 
-Import naming-polaris plugin.
+Import naming-polarismesh plugin.
 
 ```go
-import _ "trpc.group/trpc-go/trpc-naming-polaris"
+import _ "trpc.group/trpc-go/trpc-naming-polarismesh"
 ```
 Follow the following Chapters to config yaml.
 
@@ -19,7 +19,7 @@ Follow the following Chapters to config yaml.
 ### Discovery in tRPC-Go Framework
 
 ```go
-import _ "trpc.group/trpc-go/trpc-naming-polaris"
+import _ "trpc.group/trpc-go/trpc-naming-polarismesh"
 
 func main() {
     opts := []client.Option{
@@ -48,7 +48,7 @@ func main() {
 import (
     "trpc.group/trpc-go/trpc-go/naming/registry"
 
-    _ "trpc.group/trpc-go/trpc-naming-polaris"
+    _ "trpc.group/trpc-go/trpc-naming-polarismesh"
 )
 
 func main() {
@@ -97,7 +97,7 @@ opts := []client.Option{
 // namespace, use current env namespace on missing.
 client.WithNamespace("Development"),
 // service name.
-// client.WithTarget("polaris://trpc.app.server.service"),
+// client.WithTarget("polarismesh://trpc.app.server.service"),
 client.WithServiceName("trpc.app.server.service"),
 // set callee env.
 client.WithCalleeEnvName("62a30eec"),
@@ -114,14 +114,14 @@ client.WithDisableServiceRouter()
 ```yaml
 plugins:  # Plugin configurations.
   registry:
-    polaris:  # This is a polaris registry.
+    polarismesh:  # This is a polaris mesh registry.
       register_self: true  # Whether register by itself, default as false.
       heartbeat_interval: 3000  # Heartbeat report interval.
-      protocol: grpc  # The protocol used to connect polaris console.
+      protocol: grpc  # The protocol used to connect polaris mesh console.
       # service:  # Services to be registered.
       #   - name: trpc.server.Service1  # Service name, should keep consistent with service in server config in trpc_go.yaml.
       #     namespace: Development  # The namespace this service belongs to.
-      #     token: xxxxxxxxxxxxxxxxxxx  # Apply your token in polaris console.
+      #     token: xxxxxxxxxxxxxxxxxxx  # Apply your token in polaris mesh console.
       #     instance_id: yyyyyyyyyyyyyyyy  # (optional) used by service registry, instance_id=XXX(namespace+service+host+port).
       #     weight: 100  # Set weight.
       #     bind_address: eth1:8080  # (optional) set listen addr, use the addr in service as default.
@@ -131,28 +131,28 @@ plugins:  # Plugin configurations.
       #       key1: val1  # Other metadata(s)
       #       key2: val2
       # debug: true  # Enable debug mod, default as false.
-      # address_list: ip1:port1,ip2:port2  # Address(es) of polaris service.
-      # connect_timeout: 1000  # Timeout to connect to Polaris console, in ms, default as 1000ms.
-      # message_timeout: 1s  # Timeout to receive a message from polaris Console, default as 1s.
+      # address_list: ip1:port1,ip2:port2  # Address(es) of polaris mesh service.
+      # connect_timeout: 1000  # Timeout to connect to polaris mesh console, in ms, default as 1000ms.
+      # message_timeout: 1s  # Timeout to receive a message from polaris mesh console, default as 1s.
       # instance_location:  # The location of service.
       #   region: China
       #   zone: Guangdong
       #   campus: Shenzhen
 
   selector:  # The service discovery config.
-    polaris:  # This is a polaris selector.
+    polarismesh:  # This is a polaris mesh selector.
       # debug: true  # Enable debug log.
       # default: true  # Whether Set as default selector.
       # enable_canary: false  # Whether enable canary, default as false.
-      # timeout: 1000  # Timeout to get instances from polaris console, in ms, default as 1000ms.
+      # timeout: 1000  # Timeout to get instances from polaris mesh console, in ms, default as 1000ms.
       # report_timeout: 1ms  # If callee timeout is less report timeout, ignore timeout and do not report.
-      # connect_timeout: 1000  # Timeout to connect to Polaris console, in ms, default as 1000ms.
-      # message_timeout: 1s  # Timeout to receive a message from polaris Console, default as 1s.
-      # log_dir: $HOME/polaris/log  # The directory for polaris log.
-      protocol: grpc  # The protocol used to connect polaris console.
-      # address_list: ip1:port1,ip2:port2  # Address(es) of polaris service.
+      # connect_timeout: 1000  # Timeout to connect to Polaris mesh console, in ms, default as 1000ms.
+      # message_timeout: 1s  # Timeout to receive a message from polaris mesh console, default as 1s.
+      # log_dir: $HOME/polarismesh/log  # The directory for polaris mesh log.
+      protocol: grpc  # The protocol used to connect polaris mesh console.
+      # address_list: ip1:port1,ip2:port2  # Address(es) of polaris mesh service.
       # enable_servicerouter: true  # Whether enable service router, default enabled.
-      # persistDir: $HOME/polaris/backup  # The persistent directory of SDK data.
+      # persistDir: $HOME/polarismesh/backup  # The persistent directory of SDK data.
       # service_expire_time: 24h  # The expire time to exile an inactive service from cache.
       # loadbalance:
       #   name:  # Load balance type, you can also use strings begin with `DefaultLoadBalancer` in https://github.com/polarismesh/polaris-go/blob/v1.5.2/pkg/config/default.go#L181 .
@@ -197,19 +197,19 @@ plugins:  # Plugin configurations.
       #   zone: Guangdong
       #   campus: Shenzhen
       
-      ## This boolean is used at WithTarget mod to transfer tRPC metadata to naming polaris.
-      ## If opened, the trans-info, with prefix `selector-meta-` is removed, will be filled in Metadata of SourceService to match polaris rules.
-      ## For example: the trans-info `selector-meta-key1:val1` will transfer meta `key1:val1` to polaris.
+      ## This boolean is used at WithTarget mod to transfer tRPC metadata to naming polaris mesh.
+      ## If opened, the trans-info, with prefix `selector-meta-` is removed, will be filled in Metadata of SourceService to match polaris mesh rules.
+      ## For example: the trans-info `selector-meta-key1:val1` will transfer meta `key1:val1` to polaris mesh.
       # enable_trans_meta: true
 ```
 
-## Polaris Official Docs
+## Polaris Mesh Official Docs
 
 https://polarismesh.cn/docs
 
 ## Support Multiple Selectors
 
-After import `trpc-naming-polaris`, a selector plugin named `"polaris"` will be auto registered. If you want to use a
+After import `trpc-naming-polarismesh`, a selector plugin named `"polarismesh"` will be auto registered. If you want to use a
 different selector to call a service in another region, you can register a new selector plugin. For example:
 
 ### Method 1: Codes and Configs
@@ -224,35 +224,35 @@ Choose one of the following(do not mixing them):
 ```go
 import (
     "trpc.group/trpc-go/trpc-go/plugin"
-    "trpc.group/trpc-go/trpc-naming-polaris"
+    "trpc.group/trpc-go/trpc-naming-polarismesh"
 )
 
 func init() {
-    plugin.Register("polaris-customized1", &naming.SelectorFactory{})
-    plugin.Register("polaris-customized2", &naming.SelectorFactory{})
+    plugin.Register("polarismesh-customized1", &naming.SelectorFactory{})
+    plugin.Register("polarismesh-customized2", &naming.SelectorFactory{})
 }
 
 // Discovery by service name.
 // Client options can be configured in trpc_go.yaml.
 func CallWithServiceName(ctx context.Context) error {
-	// Call down stream by the config of plugin "polaris-customized1".
+	// Call down stream by the config of plugin "polarismesh-customized1".
     rsp, err := proxy.Invoke(ctx, req,
         client.WithServiceName("trpc.app.server.service"),
-		// The following four options should be used together to take "polaris-customized1" in effect.
-        client.WithDiscoveryName("polaris-customized1"),
-        client.WithServiceRouterName("polaris-customized1"),
+		// The following four options should be used together to take "polarismesh-customized1" in effect.
+        client.WithDiscoveryName("polarismesh-customized1"),
+        client.WithServiceRouterName("polarismesh-customized1"),
         client.WithBalancerName("polaris_wr"), // Fill the load balance in default selector config.
-        client.WithCircuitBreakerName("polaris-customized1"),
+        client.WithCircuitBreakerName("polarismesh-customized1"),
     )
     if err != nil { return err }
-	// Call down stream by the config of plugin "polaris-customized2".
+	// Call down stream by the config of plugin "polarismesh-customized2".
     rsp, err = proxy.Invoke(ctx, req,
         client.WithServiceName("trpc.app.server.service"),
-        // The following four options should be used together to take "polaris-customized2" in effect.
-        client.WithDiscoveryName("polaris-customized2"),
-        client.WithServiceRouterName("polaris-customized2"),
+        // The following four options should be used together to take "polarismesh-customized2" in effect.
+        client.WithDiscoveryName("polarismesh-customized2"),
+        client.WithServiceRouterName("polarismesh-customized2"),
         client.WithBalancerName("polaris_wr"), // Fill the load balance in default selector config.
-        client.WithCircuitBreakerName("polaris-customized2"),
+        client.WithCircuitBreakerName("polarismesh-customized2"),
     )
     if err != nil { return err }
 }
@@ -260,13 +260,13 @@ func CallWithServiceName(ctx context.Context) error {
 // Discovery by target.
 // Client options can be configured in trpc_go.yaml.
 func CallWithTarget(ctx context.Context) error {
-    // Call down stream by the config of plugin "polaris-customized1".
+    // Call down stream by the config of plugin "polarismesh-customized1".
     rsp, err := proxy.Invoke(ctx, req,
-        client.WithTarget("polaris-customized1://trpc.app.server.service"))
+        client.WithTarget("polarismesh-customized1://trpc.app.server.service"))
     if err != nil { return err }
-	// Call down stream by the config of plugin "polaris-customized2".
+	// Call down stream by the config of plugin "polarismesh-customized2".
     rsp, err = proxy.Invoke(ctx, req,
-        client.WithTarget("polaris-customized2://trpc.app.server.service"))
+        client.WithTarget("polarismesh-customized2://trpc.app.server.service"))
     if err != nil { return err }
 }
 ```
@@ -281,10 +281,10 @@ The following methods is also optional, and must not be mixed.
   client:  # The config of client.
     service:  # The config for each callee.
       - name: trpc.app.server.service  # The service name of callee.
-        discovery: polaris-customized1
-        servicerouter: polaris-customized1
+        discovery: polarismesh-customized1
+        servicerouter: polarismesh-customized1
         loadbalance: polaris_wr  # Fill load balance in default selector.
-        circuitbreaker: polaris-customized1
+        circuitbreaker: polarismesh-customized1
         network: tcp  # The network type of callee, tcp or udp.
         protocol: trpc  # The application layer protocol, trpc or http.
         timeout: 1000   # The maximum time to process a request.
@@ -296,7 +296,7 @@ The following methods is also optional, and must not be mixed.
       - name: trpc.app.server.service  # The service name of callee.
         network: tcp  # The network type of callee, tcp or udp.
         protocol: trpc  # The application layer protocol, trpc or http.
-        target: polaris-customized1://trpc.app.server.service  # The address of callee.
+        target: polarismesh-customized1://trpc.app.server.service  # The address of callee.
         timeout: 1000   # The maximum time to process a request.
   ```
 
@@ -305,37 +305,37 @@ The following methods is also optional, and must not be mixed.
 ```yaml
 plugins:
   selector:
-    polaris:
+    polarismesh:
       protocol: grpc
       default: true  # Set as default selector.
       join_point: default
       # The directory to persist cached services.
       # Different selector should use different persistDir to avoid interface with each other.
-      persistDir: $HOME/polaris/backup
-      # The directory of polaris log.
-      # There is only one polaris log in a process. If multiple directories is configured, the last one will be used.
-      log_dir: $HOME/polaris/log
+      persistDir: $HOME/polarismesh/backup
+      # The directory of polaris mesh log.
+      # There is only one polaris mesh log in a process. If multiple directories is configured, the last one will be used.
+      log_dir: $HOME/polarismesh/log
       # loadbalance:  # Like logs, load balance should be set once, for example, in default selector.
       #   name:  # The types of load balance.
       #     - polaris_wr  # Weighted random. The first LB in this list will be used as default.
       #     - polaris_hash  # Hash.
       #     - polaris_ring_hash  # Consistent hash.
       # For other configs, see Section `A Complete Config Example`.
-    polaris-customized1:
+    polarismesh-customized1:
       protocol: grpc
       default: false  # This is not default selector.
       join_point: point1
       # The directory to persist cached services.
       # Different selector should use different persistDir to avoid interface with each other.
-      persistDir: $HOME/polaris-customized1/backup
+      persistDir: $HOME/polarismesh-customized1/backup
       # For other configs, see Section `A Complete Config Example`.
-    polaris-customized2:
+    polarismesh-customized2:
       protocol: grpc
       default: false  # This is not default selector.
       join_point: point2
       # The directory to persist cached services.
       # Different selector should use different persistDir to avoid interface with each other.
-      persistDir: $HOME/polaris-customized2/backup
+      persistDir: $HOME/polarismesh-customized2/backup
       # For other configs, see Section `A Complete Config Example`.
 ```
 
@@ -347,16 +347,16 @@ these four options must be provided.
 
 ```golang
 import (
-    "trpc.group/trpc-go/trpc-naming-polaris"
+    "trpc.group/trpc-go/trpc-naming-polarismesh"
 )
 
   func init() {
     addrs := "xxx,yyy"
-    logDir1 := "polaris-customized1/log"
-    persistDir1 := "polaris-customized1/backup"
+    logDir1 := "polarismesh-customized1/log"
+    persistDir1 := "polarismesh-customized1/backup"
     dft1 := true
     if err := naming.SetupWithConfig(&naming.Config{
-        Name: "polaris-customized1",
+        Name: "polarismesh-customized1",
         AddressList: addrs,
         Default: &dft1, // set as default
 		// When discovery by service name, load balance configs should be provided under default selector.
@@ -367,10 +367,10 @@ import (
     }); err != nil { /* handle error */ }
 
     addrs2 := "zzz"
-    persistDir2 := "polaris-customized2/backup"
+    persistDir2 := "polarismesh-customized2/backup"
     dft2 := false
     if err := naming.SetupWithConfig(&naming.Config{
-        Name: "polaris-customized2",
+        Name: "polarismesh-customized2",
         AddressList: addrs2,
         Default: &dft2, // set as non default.
         PersistDir: &persistDir2,
@@ -380,53 +380,53 @@ import (
 
 // Discovery by service name.
   func CallWithServiceName(ctx context.Context) error {
-    // Call down stream with "polaris-customized1".
+    // Call down stream with "polarismesh-customized1".
     rsp, err := proxy.Invoke(ctx, req,
         client.WithServiceName("trpc.app.server.service"),
-        client.WithDiscoveryName("polaris-customized1"),
-        client.WithServiceRouterName("polaris-customized1"),
+        client.WithDiscoveryName("polarismesh-customized1"),
+        client.WithServiceRouterName("polarismesh-customized1"),
         client.WithBalancerName("polaris_wr"), // Fill the load balance in default selector.
-        client.WithCircuitBreakerName("polaris-customized1"),
+        client.WithCircuitBreakerName("polarismesh-customized1"),
     )
     if err != nil { return err }
-    // Call down stream with "polaris-customized2".
+    // Call down stream with "polarismesh-customized2".
     rsp, err = proxy.Invoke(ctx, req,
         client.WithServiceName("trpc.app.server.service"),
-        client.WithDiscoveryName("polaris-customized2"),
-        client.WithServiceRouterName("polaris-customized2"),
+        client.WithDiscoveryName("polarismesh-customized2"),
+        client.WithServiceRouterName("polarismesh-customized2"),
         client.WithBalancerName("polaris_wr"), // Fill the load balance in default selector.
-        client.WithCircuitBreakerName("polaris-customized2"),
+        client.WithCircuitBreakerName("polarismesh-customized2"),
     )
     if err != nil { return err }
 }
 
 // Discovery by target.
 func CallWithTarget(ctx context.Context) error {
-    // Call down stream with "polaris-customized1".
+    // Call down stream with "polarismesh-customized1".
     rsp, err := proxy.Invoke(ctx, req,
-      client.WithTarget("polaris-customized1://trpc.app.server.service"))
+      client.WithTarget("polarismesh-customized1://trpc.app.server.service"))
     if err != nil { return err }
-    // Call down stream with "polaris-customized2".
+    // Call down stream with "polarismesh-customized2".
     rsp, err = proxy.Invoke(ctx, req,
-      client.WithTarget("polaris-customized2://trpc.app.server.service"))
+      client.WithTarget("polarismesh-customized2://trpc.app.server.service"))
     if err != nil { return err }
 }
 ```
 
-Note: tRPC plugin may not support some new features of polaris. You can create your own polaris SDK config and pass it
+Note: tRPC plugin may not support some new features of polaris mesh. You can create your own polaris mesh SDK config and pass it
 to tRPC plugin. It is considered as basic config, and options by tRPC API will overwrite it, and finally, you got your
-own polaris object.
+own polaris mesh object.
 
 ```golang
-// Creates a polaris config.
+// Creates a polaris mesh config.
 cfg := api.NewConfiguration()
-// Add polaris addresses, limiter server etc..
+// Add polaris mesh addresses, limiter server etc..
 addresses := []string{"127.0.0.1:8081"}
 cfg.GetGlobal().GetServerConnector().SetAddresses(addresses)
-cfg.GetProvider().GetRateLimit().GetRateLimitCluster().SetService("polaris.metric.v2.test")
+cfg.GetProvider().GetRateLimit().GetRateLimitCluster().SetService("polarismesh.metric.v2.test")
 // Initialize.
 if err := naming.SetupWithConfig(&naming.Config{
-    Name: "polaris-customized1",
+    Name: "polarismesh-customized1",
     Loadbalance: naming.LoadbalanceConfig{Name: []string{"polaris_ws"}},
     PolarisConfig: cfg,
 }); err != nil { /* handle error */ }
@@ -447,61 +447,61 @@ Discovery by `client.WithTarget` iff(one of the flowing should be satisfied, and
 We didn't mention `client.WithServiceName` or `yaml.client.service[i].name`, because they should always be provided and
 are not used to distinguish two discovery methods.
 
-### POV of two Discoveries in Polaris Plugin
+### POV of two Discoveries in Polaris Mesh Plugin
 
 #### `WithServiceName`
 
 To discover by `WithServiceName`, following conditions should be satisfied:
-* Correctly config this plugin: 1. anonymous import, and 2. config polaris selector in plugin config;
+* Correctly config this plugin: 1. anonymous import, and 2. config polaris mesh selector in plugin config;
 * No `client.WithTarget` in codes and no `target` in `yaml.client.service[i]`.
 
-This way, you will discover by `WithServiceName`. You may find that although there's no polaris info in client config except
-polaris selector in plugin config, the client actually use polaris to discovery. This is because polaris plugin replace
-tRPC default selector with it own implementation, in that, users can complete polaris discovery almost imperceptible.
+This way, you will discover by `WithServiceName`. You may find that although there's no polaris mesh info in client config except
+polaris mesh selector in plugin config, the client actually use polaris mesh to discovery. This is because polaris mesh plugin replace
+tRPC default selector with it own implementation, in that, users can complete polaris mesh discovery almost imperceptible.
 
 #### `WithTarget`
 
 To discover by `WithTarget`, following conditions should be satisfied:
-* Correctly config this plugin: 1. anonymous import, and 2. config polaris selector in plugin config;
+* Correctly config this plugin: 1. anonymous import, and 2. config polaris mesh selector in plugin config;
 * Chose one of the following(the priority of codes is greater than config):
-  * Add `client.WithTarget("polaris://trpc.app.server.service")` to your codes;
-  * Add `target: polaris://trpc.app.server.service` to `yaml.client.service[i].target`.
+  * Add `client.WithTarget("polarismesh://trpc.app.server.service")` to your codes;
+  * Add `target: polarismesh://trpc.app.server.service` to `yaml.client.service[i].target`.
 
-This way, you will discover by `WithTarget`. You know exactly that you are using polaris discovery, because you see
-`polaris` in `target`.
+This way, you will discover by `WithTarget`. You know exactly that you are using polaris mesh discovery, because you see
+`polarismesh` in `target`.
 
 ### The Diffenrence between Two Discoveries
 
 The following chart shows the real selector used by `WithServiceName` or `WithTarget`:
 ```bash
 "trpc.app.server.service"   =>  (trpc-go).selector.TrpcSelector.Selector        => ip:port  # WithServiceName
-"trpc.app.server.service"   =>  (trpc-naming-polaris).selector.Selector.Select  => ip:port  # WithTarget
+"trpc.app.server.service"   =>  (trpc-naming-polarismesh).selector.Selector.Select  => ip:port  # WithTarget
 ```
 
-After config polaris selector plugin, three models `discovery, servicerouter, loadbalance` used by internal
-`(trpc-go).selector.TrpcSelector.Selector` will be replaced by implementation of polaris. The actual effect is:
+After config polaris mesh selector plugin, three models `discovery, servicerouter, loadbalance` used by internal
+`(trpc-go).selector.TrpcSelector.Selector` will be replaced by implementation of polaris mesh. The actual effect is:
 ```bash
-"trpc.app.server.service" =>  (trpc-naming-polaris).discovery.Discovery.List
-                           =>  (trpc-naming-polaris).servicerouter.ServiceRouter.Filter        
-                            =>  (trpc-naming-polaris).loadbalance.WRLoadBalancer.Select => ip:port  # WithServiceName
+"trpc.app.server.service" =>  (trpc-naming-polarismesh).discovery.Discovery.List
+                           =>  (trpc-naming-polarismesh).servicerouter.ServiceRouter.Filter        
+                            =>  (trpc-naming-polarismesh).loadbalance.WRLoadBalancer.Select => ip:port  # WithServiceName
 
-"trpc.app.server.service"   =>  (trpc-naming-polaris).selector.Selector.Select          => ip:port  # WithTarget
+"trpc.app.server.service"   =>  (trpc-naming-polarismesh).selector.Selector.Select          => ip:port  # WithTarget
 ```
 
-In other words, `WithServiceName` use three models `discovery, servicerouter, loadbalance` of polaris plugin, and
-`WithTarget` use `selector` of polaris plugin.
+In other words, `WithServiceName` use three models `discovery, servicerouter, loadbalance` of polaris mesh plugin, and
+`WithTarget` use `selector` of polaris mesh plugin.
 
-However, `selector` of polaris plugin does not combine three models together like `TrpcSelector`, and has its own logic,
+However, `selector` of polaris mesh plugin does not combine three models together like `TrpcSelector`, and has its own logic,
 which result in the difference of `WithServiceName` and `WithTarget`:
 
-| |`WithServiceName`|`WithTarget`|
+||`WithServiceName`|`WithTarget`|
 |-|-|-|
-| use polaris SDK |`discovery, servicerouter, loadbalance`|`selector`|
+| use polaris mesh SDK |`discovery, servicerouter, loadbalance`|`selector`|
 
 #### Quick Check
 | feature                                                 | `WithServiceName`<br>`enable_servicerouter=true` | `WithTarget`<br>`enable_servicerouter=true` | `WithServiceName`<br>`enable_servicerouter=false` | `WithTarget`<br>`enable_servicerouter=false` |
 |---------------------------------------------------------|:------------------------------------------------:|:-------------------------------------------:|:-------------------------------------------------:|:--------------------------------------------:|
-| use polaris caller out rules                            |           <font color="green">Y</font>           |        <font color="green">Y</font>         |            <font color="red">N</font>             |          <font color="red">N</font>          |
+| use polaris mesh caller out rules                       |           <font color="green">Y</font>           |        <font color="green">Y</font>         |            <font color="red">N</font>             |          <font color="red">N</font>          |
 | could enable `EnableTransMeta`                          |            <font color="red">N</font>            |        <font color="green">Y</font>         |            <font color="red">N</font>             |          <font color="red">N</font>          |
 | set original env name to metadata['env']                |           <font color="green">Y</font>           |        <font color="green">Y</font>         |            <font color="red">N</font>             |          <font color="red">N</font>          |
 | set target env name to metadata['env']                  |            <font color="red">N</font>            |         <font color="red">N</font>          |           <font color="green">Y</font>            |         <font color="green">Y</font>         |
@@ -513,13 +513,13 @@ which result in the difference of `WithServiceName` and `WithTarget`:
 | set router                                              |           <font color="green">Y</font>           |         <font color="red">N</font>          |           <font color="green">Y</font>            |          <font color="red">N</font>          |
 
 Cautious:
-* `enable_servierouter` is the config provided by polaris selector plugin. There is an option
+* `enable_servierouter` is the config provided by polaris mesh selector plugin. There is an option
   `client.WithDisableServiceRouter` and config `disable_servicerouter` in tRPC-Go client, which correspond to the config
-  of polaris plugin(you may think that tRPC-Go create an option specifically for polaris plugin). The Difference is that
-  framework can control each client, but polaris plugin is a global config.
+  of polaris mesh plugin(you may think that tRPC-Go create an option specifically for polaris mesh plugin). The Difference is that
+  framework can control each client, but polaris mesh plugin is a global config.
 * As for the interpretation of the correct semantics of `enable_servicerouter`, it is roughly: When
   `enable_servicerouter=true`, the source service out rules are enabled (this requires that the source service must be
-  registered on Polaris).
+  registered on polaris mesh).
 * Set router is only available at `WithServicename` mod.
 * Metadata router is only available at `WithTarget` mod.
 * `EnableTransMeta` is only available when `enable_servicerouter=true` at `WithTarget` mod.

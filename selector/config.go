@@ -24,9 +24,9 @@ type Config struct {
 	Protocol string
 	// Enable is the state of the ServiceRouter.
 	Enable bool
-	// Timeout obtains information Polaris background timeout, in ms.
+	// Timeout obtains information polaris mesh background timeout, in ms.
 	Timeout int
-	// ConnectTimeout is the timeout of connecting to Polaris background, in ms.
+	// ConnectTimeout is the timeout of connecting to polaris mesh background, in ms.
 	ConnectTimeout int
 	// Enable  is the state of the canary.
 	EnableCanary bool

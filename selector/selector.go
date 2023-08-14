@@ -19,8 +19,8 @@ import (
 	"trpc.group/trpc-go/trpc-go/log"
 	"trpc.group/trpc-go/trpc-go/naming/registry"
 	"trpc.group/trpc-go/trpc-go/naming/selector"
-	"trpc.group/trpc-go/trpc-naming-polaris/circuitbreaker"
-	"trpc.group/trpc-go/trpc-naming-polaris/servicerouter"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/circuitbreaker"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/servicerouter"
 
 	"github.com/polarismesh/polaris-go/api"
 	"github.com/polarismesh/polaris-go/pkg/config"
@@ -42,7 +42,7 @@ func Setup(sdkCtx api.SDKContext, cfg *Config) error {
 		consumer: api.NewConsumerAPIByContext(sdkCtx),
 		cfg:      cfg,
 	}
-	const defaultName = "polaris"
+	const defaultName = "polarismesh"
 	if cfg.Name == "" {
 		cfg.Name = defaultName
 	}
@@ -57,7 +57,7 @@ func Register(cfg *Config) {
 		if err != nil {
 			panic(err)
 		}
-		selector.Register("polaris", s)
+		selector.Register("polarismesh", s)
 	})
 }
 
@@ -130,9 +130,9 @@ func getMetadata(opts *selector.Options, enableTransMeta bool) map[string]string
 		metadata["env"] = opts.SourceEnvName
 	}
 	// To solve the problem that the transparent transmission field of
-	// the request cannot be passed to Polaris for meta matching,
+	// the request cannot be passed to polaris mesh for meta matching,
 	// agree on the transparent transmission field with the prefix 'selector-meta-',
-	// remove the prefix and fill in meta, and use it for Polaris matching.
+	// remove the prefix and fill in meta, and use it for polaris mesh matching.
 	if enableTransMeta {
 		setTransSelectorMeta(opts, metadata)
 	}
@@ -169,7 +169,7 @@ func getDestMetadata(opts *selector.Options) map[string]string {
 			destMeta["env"] = opts.DestinationEnvName
 		}
 	}
-	// Support custom metadata tag key passed to polaris for addressing.
+	// Support custom metadata tag key passed to polaris mesh for addressing.
 	for key, value := range opts.DestinationMetadata {
 		if len(key) > 0 && len(value) > 0 {
 			destMeta[key] = value
@@ -184,7 +184,7 @@ func (s *Selector) Select(serviceName string, opt ...selector.Option) (*registry
 	for _, o := range opt {
 		o(opts)
 	}
-	log.Tracef("[NAMING-POLARIS] select options: %+v", opts)
+	log.Tracef("[NAMING-POLARISMESH] select options: %+v", opts)
 
 	namespace := opts.Namespace
 	var sourceService *model.ServiceInfo

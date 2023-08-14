@@ -62,7 +62,7 @@ type Service struct {
 }
 
 func init() {
-	plugin.Register("polaris", &RegistryFactory{})
+	plugin.Register("polarismesh", &RegistryFactory{})
 }
 
 // RegistryFactory is registered factory.
@@ -85,7 +85,7 @@ func (f *RegistryFactory) Setup(name string, configDec plugin.Decoder) error {
 		return err
 	}
 	if conf.Debug {
-		log.Debug("set polaris log level debug")
+		log.Debug("set polaris mesh log level debug")
 		plog.GetBaseLogger().SetLogLevel(plog.DebugLog)
 	}
 	sdkCtx, err := newSDKCtx(conf)
@@ -99,7 +99,7 @@ func (f *RegistryFactory) Setup(name string, configDec plugin.Decoder) error {
 // FlexDependsOn makes sure that register is initialized after selector,
 // which may set some global status of SDK, such as log directories.
 func (f *RegistryFactory) FlexDependsOn() []string {
-	return []string{"selector-polaris"}
+	return []string{"selector-polarismesh"}
 }
 
 // GetSDKCtx returns the stored sdk context.

@@ -1,4 +1,4 @@
-module trpc.group/trpc-go/trpc-naming-polaris
+module trpc.group/trpc-go/trpc-naming-polarismesh
 
 go 1.18
 

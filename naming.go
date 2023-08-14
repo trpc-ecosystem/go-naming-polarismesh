@@ -15,12 +15,12 @@ import (
 	"time"
 
 	"trpc.group/trpc-go/trpc-go/plugin"
-	"trpc.group/trpc-go/trpc-naming-polaris/circuitbreaker"
-	"trpc.group/trpc-go/trpc-naming-polaris/discovery"
-	"trpc.group/trpc-go/trpc-naming-polaris/loadbalance"
-	_ "trpc.group/trpc-go/trpc-naming-polaris/registry" // 初始化注册模块
-	"trpc.group/trpc-go/trpc-naming-polaris/selector"
-	"trpc.group/trpc-go/trpc-naming-polaris/servicerouter"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/circuitbreaker"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/discovery"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/loadbalance"
+	_ "trpc.group/trpc-go/trpc-naming-polarismesh/registry" // 初始化注册模块
+	"trpc.group/trpc-go/trpc-naming-polarismesh/selector"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/servicerouter"
 
 	"github.com/polarismesh/polaris-go/api"
 	"github.com/polarismesh/polaris-go/pkg/config"
@@ -31,7 +31,7 @@ import (
 )
 
 func init() {
-	plugin.Register("polaris", &SelectorFactory{})
+	plugin.Register("polarismesh", &SelectorFactory{})
 }
 
 // Config framework configuration.
@@ -304,7 +304,7 @@ func setupLoadbalance(sdkCtx api.SDKContext, conf *Config, setDefault bool) erro
 		)
 	}
 	for index, balanceType := range conf.Loadbalance.Name {
-		// Under the premise that Polaris is set as the addressing method by default,
+		// Under the premise that polaris mesh is set as the addressing method by default,
 		// the first load balancing method is set as the default load balancing method.
 		isDefault := setDefault && index == 0
 		if err := loadbalance.Setup(sdkCtx, balanceType, isDefault); err != nil {
@@ -423,7 +423,7 @@ func setLocation(c config.Configuration, cfg *Config) {
 
 func newSDKContext(cfg *Config) (api.SDKContext, error) {
 	var c config.Configuration
-	if cfg.PolarisConfig != nil { // Specific polaris config
+	if cfg.PolarisConfig != nil { // Specific polaris mesh config
 		c = cfg.PolarisConfig
 	} else { // Default polairs config
 		c = api.NewConfiguration()

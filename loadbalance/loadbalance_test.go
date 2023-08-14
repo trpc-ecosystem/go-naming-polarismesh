@@ -11,10 +11,10 @@ import (
 
 	"trpc.group/trpc-go/trpc-go/naming/registry"
 
-	"trpc.group/trpc-go/trpc-naming-polaris/mock/mock_api"
-	"trpc.group/trpc-go/trpc-naming-polaris/mock/mock_loadbalancer"
-	"trpc.group/trpc-go/trpc-naming-polaris/mock/mock_model"
-	"trpc.group/trpc-go/trpc-naming-polaris/mock/mock_plugin"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/mock/mock_api"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/mock/mock_loadbalancer"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/mock/mock_model"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/mock/mock_plugin"
 
 	"github.com/golang/mock/gomock"
 	"github.com/polarismesh/polaris-go/pkg/config"

@@ -146,7 +146,7 @@ func (wr *WRLoadBalancer) Select(serviceName string,
 	return node, nil
 }
 
-// AsPluginCfgs parses yaml node to polaris load balance configures.
+// AsPluginCfgs parses yaml node to polaris mesh load balance configures.
 func AsPluginCfgs(yamlCfgs map[string]yaml.Node) (map[string]config.BaseConfig, error) {
 	cfgs := make(map[string]config.BaseConfig)
 	for trpcName, node := range yamlCfgs {
