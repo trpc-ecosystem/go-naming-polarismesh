@@ -1,6 +1,4 @@
-[TOC]
-
-# tRPC-Go Polaris Mesh Plugin
+English | [中文](README_zh_CN.md)
 
 This Plugin consists of Service Registry, Service Discovery, Load Balance and Circuit Breaker.
 You can integrate it to your project quickly by yaml config.
@@ -122,7 +120,10 @@ plugins:  # Plugin configurations.
       #   - name: trpc.server.Service1  # Service name, should keep consistent with service in server config in trpc_go.yaml.
       #     namespace: Development  # The namespace this service belongs to.
       #     token: xxxxxxxxxxxxxxxxxxx  # Apply your token in polaris mesh console.
-      #     instance_id: yyyyyyyyyyyyyyyy  # (optional) used by service registry, instance_id=XXX(namespace+service+host+port).
+      #     # (Optional) Used to heartbeat or unregister.
+      #     # When register_self is true, this config has no effect, the plugin will use returned instance_id of register to overwrite config.
+      #     # if register_self is false, instance_id cannot be missing.
+      #     instance_id: yyyyyyyyyyyyyyyy
       #     weight: 100  # Set weight.
       #     bind_address: eth1:8080  # (optional) set listen addr, use the addr in service as default.
       #     metadata:  # The user defined metadata.

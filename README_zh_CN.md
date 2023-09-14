@@ -1,6 +1,4 @@
-[TOC]
-
-# tRPC-Go 北极星名字服务插件
+[English](README.md) | 中文
 
 包括了“服务注册、服务发现、负载均衡、熔断器”等组件，通过框架配置可以在 tRPC-Go 框架内部使用，也可以整体使用。
 
@@ -125,7 +123,10 @@ plugins:  # 插件配置
       #   - name: trpc.server.Service1    # 服务名1, 一般和 trpc_go.yaml 中 server config 处的各个 service 一一对应
       #     namespace: Development        # 该服务需要注册的命名空间
       #     token: xxxxxxxxxxxxxxxxxxx    # 前往北极星控制台进行申请或查看
-      #     instance_id: yyyyyyyyyyyyyyyy # （可选）服务注册所需要的，instance_id=XXX(namespace+service+host+port)
+      #     # （可选）用于服务的心跳上报或反注册。
+      #     # 当 register_self 为 true 时，这里的配置无效，插件会使用注册返回的 instance_id 覆盖这里的值。
+      #     # 当 register_self 为 false 时，需要指定 instance_id。
+      #     instance_id: yyyyyyyyyyyyyyyy
       #     weight: 100                   # 设置权重
       #     bind_address: eth1:8080       # （可选）指定服务监听地址，默认采用 service 中的地址
       #     metadata:                     # 注册时自定义 metadata

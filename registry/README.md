@@ -21,7 +21,10 @@ plugins:  # tRPC-Go plugin configuration.
         - name:  trpc.test.helloworld.Greeter1  # The name of service.
           namespace: namespace-test1  # The namespace of your service.
           token: xxxxxxxxxxxxxxxxxxxx  # Token is optional for service registration.
-          instance_id: yyyyyyyyyyyyyyyy  # Instance ID is optional for service registration.
+          # (Optional) Used to heartbeat or unregister.
+          # When register_self is true, this config has no effect, the plugin will use returned instance_id of register to overwrite config.
+          # if register_self is false, instance_id cannot be missing.
+          instance_id: yyyyyyyyyyyyyyyy
           bind_address: eth1:8080  # Specify the listening address of the service.
           weight: 100  # Default weight is 100.
           metadata:  # Custom metadata when registering.
