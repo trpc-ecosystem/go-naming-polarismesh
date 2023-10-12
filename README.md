@@ -1,5 +1,15 @@
 English | [中文](README_zh_CN.md)
 
+# tRPC-Go naming polarismesh plugin
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/trpc-ecosystem/go-naming-polarismesh.svg)](https://pkg.go.dev/github.com/trpc-ecosystem/go-naming-polarismesh)
+[![Go Report Card](https://goreportcard.com/badge/github.com/trpc.group/trpc-go/trpc-naming-polarismesh)](https://goreportcard.com/report/github.com/trpc.group/trpc-go/trpc-naming-polarismesh)
+[![LICENSE](https://img.shields.io/github/license/trpc-ecosystem/go-naming-polarismesh.svg?style=flat-square)](https://github.com/trpc-ecosystem/go-naming-polarismesh/blob/main/LICENSE)
+[![Releases](https://img.shields.io/github/release/trpc-ecosystem/go-naming-polarismesh.svg?style=flat-square)](https://github.com/trpc-ecosystem/go-naming-polarismesh/releases)
+[![Docs](https://img.shields.io/badge/docs-latest-green)](http://test.trpc.group.woa.com/docs/)
+[![Tests](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/prc.yaml/badge.svg)](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/prc.yaml)
+[![Coverage](https://codecov.io/gh/trpc-ecosystem/go-naming-polarismesh/branch/main/graph/badge.svg)](https://app.codecov.io/gh/trpc-ecosystem/go-naming-polarismesh/tree/main)
+ 
 This Plugin consists of Service Registry, Service Discovery, Load Balance and Circuit Breaker.
 You can integrate it to your project quickly by yaml config.
 
