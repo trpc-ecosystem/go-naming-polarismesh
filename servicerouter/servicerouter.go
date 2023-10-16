@@ -1,8 +1,15 @@
+//
+//
 // Tencent is pleased to support the open source community by making tRPC available.
-// Copyright (C) 2023 THL A29 Limited, a Tencent company. All rights reserved.
+//
+// Copyright (C) 2023 THL A29 Limited, a Tencent company.
+// All rights reserved.
+//
 // If you have downloaded a copy of the tRPC source code from Tencent,
 // please note that tRPC source code is licensed under the Apache 2.0 License,
 // A copy of the Apache 2.0 License is included in this file.
+//
+//
 
 // Package servicerouter is a service router.
 package servicerouter
@@ -62,7 +69,7 @@ func Setup(sdkCtx api.SDKContext, cfg *Config, setDefault bool) error {
 	}
 	s.NearbyBased = nearbyBased.(servicerouter.ServiceRouter)
 
-	//Initialize packet routing.
+	// Initialize packet routing.
 	setDivison, err := sdkCtx.GetPlugins().GetPlugin(
 		common.TypeServiceRouter, config.DefaultServiceRouterSetDivision)
 	if err != nil {
@@ -193,7 +200,7 @@ func (s *ServiceRouter) setEnable(
 	sourceSetName := opts.SourceSetName
 	dstSetName := opts.DestinationSetName
 	if len(sourceSetName) != 0 || len(dstSetName) != 0 {
-		//set grouping enabled.
+		// set grouping enabled.
 		if len(sourceSetName) != 0 {
 			if srcServiceInfo.Metadata == nil {
 				srcServiceInfo.Metadata = map[string]string{
