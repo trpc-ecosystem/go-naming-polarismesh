@@ -9,7 +9,7 @@ require (
 	github.com/polarismesh/specification v1.4.1
 	github.com/stretchr/testify v1.8.4
 	gopkg.in/yaml.v3 v3.0.1
-	trpc.group/trpc-go/trpc-go v0.0.0-20231008070952-27a655b3e79c
+	trpc.group/trpc-go/trpc-go v1.0.0
 )
 
 require (
