@@ -422,7 +422,7 @@ func CallWithTarget(ctx context.Context) error {
 }
 ```
 
-注：trpc 插件可能不支持部分北极星新功能的配置，此时业务可自行创建北极星 sdk 配置并通过 naming.Config.PolarisConig 字段提供给 trpc 插件。此配置会被视为基础配置，其他通过trpc标准接口添加的配置项会覆盖此配置的对应配置项，最后使用配置创建北极星 API 对象。
+注：trpc 插件可能不支持部分北极星新功能的配置，此时业务可自行创建北极星 sdk 配置并通过 naming.Config.PolarisConfig 字段提供给 trpc 插件。此配置会被视为基础配置，其他通过trpc标准接口添加的配置项会覆盖此配置的对应配置项，最后使用配置创建北极星 API 对象。
 
 ```golang
 // 创建北极星配置文件
