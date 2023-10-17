@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"trpc.group/trpc-go/trpc-go"
 	"trpc.group/trpc-go/trpc-go/codec"
 	"trpc.group/trpc-go/trpc-go/naming/registry"
 	"trpc.group/trpc-go/trpc-go/naming/selector"
