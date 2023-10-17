@@ -21,6 +21,8 @@ import (
 
 	_ "trpc.group/trpc-go/trpc-naming-polarismesh/registry"
 
+	"trpc.group/trpc-go/trpc-go"
+
 	"github.com/polarismesh/polaris-go/api"
 	"github.com/polarismesh/polaris-go/pkg/config"
 	plog "github.com/polarismesh/polaris-go/pkg/log"

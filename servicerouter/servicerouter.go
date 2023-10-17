@@ -70,13 +70,13 @@ func Setup(sdkCtx api.SDKContext, cfg *Config, setDefault bool) error {
 	s.NearbyBased = nearbyBased.(servicerouter.ServiceRouter)
 
 	// Initialize packet routing.
-	setDivison, err := sdkCtx.GetPlugins().GetPlugin(
+	setDivision, err := sdkCtx.GetPlugins().GetPlugin(
 		common.TypeServiceRouter, config.DefaultServiceRouterSetDivision)
 	if err != nil {
 		log.Errorf("get service router plugin err: %s\n", err.Error())
 		return err
 	}
-	s.SetDivison = setDivison.(servicerouter.ServiceRouter)
+	s.SetDivision = setDivision.(servicerouter.ServiceRouter)
 
 	// Initialize to filter out unhealthy node routes.
 	filterOnly, err := sdkCtx.GetPlugins().GetPlugin(
@@ -124,7 +124,7 @@ type ServiceRouter struct {
 	NearbyBased servicerouter.ServiceRouter
 	FilterOnly  servicerouter.ServiceRouter
 	DstMeta     servicerouter.ServiceRouter
-	SetDivison  servicerouter.ServiceRouter
+	SetDivision servicerouter.ServiceRouter
 	Canary      servicerouter.ServiceRouter
 	cfg         *Config
 }
@@ -221,7 +221,7 @@ func (s *ServiceRouter) setEnable(
 			dstServiceInfo.Metadata[setEnableKey] = setEnableValue
 			dstServiceInfo.Metadata[setNameKey] = dstSetName
 		}
-		chain = append(chain, s.SetDivison)
+		chain = append(chain, s.SetDivision)
 	}
 	return chain
 }

@@ -5,9 +5,9 @@ go 1.18
 require (
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
-	github.com/polarismesh/polaris-go v1.5.1
-	github.com/polarismesh/specification v1.3.2-alpha.2
-	github.com/stretchr/testify v1.8.2
+	github.com/polarismesh/polaris-go v1.5.5
+	github.com/polarismesh/specification v1.4.1
+	github.com/stretchr/testify v1.8.4
 	gopkg.in/yaml.v3 v3.0.1
 	trpc.group/trpc-go/trpc-go v0.0.0-20231008070952-27a655b3e79c
 )
