@@ -481,7 +481,7 @@ To discover by `WithTarget`, following conditions should be satisfied:
 This way, you will discover by `WithTarget`. You know exactly that you are using polaris mesh discovery, because you see
 `polarismesh` in `target`.
 
-### The Diffenrence between Two Discoveries
+### The Difference between Two Discoveries
 
 The following chart shows the real selector used by `WithServiceName` or `WithTarget`:
 ```bash
