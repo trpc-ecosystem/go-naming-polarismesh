@@ -1,6 +1,7 @@
 name: Pull Request Check
 on:
   pull_request:
+  push:
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,7 +18,14 @@ jobs:
     - name: Build
       run: go build -v ./...
     - name: Test
-      run: go test -v ./...
+      run: go test -v -coverprofile=coverage.out ./...
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: coverage.out
+        flags: unittests
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   golangci:
     name: lint
     runs-on: self-hosted
