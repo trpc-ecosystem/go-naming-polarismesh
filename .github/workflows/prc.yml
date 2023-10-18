@@ -1,6 +1,7 @@
 name: Pull Request Check
 on:
   pull_request:
+  push:
   workflow_dispatch:
 permissions:
   contents: read
@@ -8,7 +9,7 @@ permissions:
 jobs:
   build:
     name: build
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-go@v4
@@ -17,10 +18,17 @@ jobs:
     - name: Build
       run: go build -v ./...
     - name: Test
-      run: go test -v ./...
+      run: go test -v -coverprofile=coverage.out ./...
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: coverage.out
+        flags: unittests
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   golangci:
     name: lint
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-go@v4
         with:
@@ -34,14 +42,14 @@ jobs:
           skip-cache: true # To prevent occasional failure of this action.
   typos:
     name: typos
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: typos 
       uses: crate-ci/typos@master
   go-apidiff:
     if: github.event_name == 'pull_request'
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
       with:

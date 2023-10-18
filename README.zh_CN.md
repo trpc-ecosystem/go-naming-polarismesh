@@ -3,11 +3,10 @@
 # 北极星插件
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/trpc-ecosystem/go-naming-polarismesh.svg)](https://pkg.go.dev/github.com/trpc-ecosystem/go-naming-polarismesh)
-[![Go Report Card](https://goreportcard.com/badge/github.com/trpc.group/trpc-go/trpc-naming-polarismesh)](https://goreportcard.com/report/github.com/trpc.group/trpc-go/trpc-naming-polarismesh)
-[![LICENSE](https://img.shields.io/github/license/trpc-ecosystem/go-naming-polarismesh.svg?style=flat-square)](https://github.com/trpc-ecosystem/go-naming-polarismesh/blob/main/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/trpc.group/trpc-go/trpc-naming-polarismesh)](https://goreportcard.com/report/trpc.group/trpc-go/trpc-naming-polarismesh)
+[![LICENSE](https://img.shields.io/badge/license-Apache--2.0-green.svg)](https://github.com/trpc-ecosystem/go-naming-polarismesh/blob/main/LICENSE)
 [![Releases](https://img.shields.io/github/release/trpc-ecosystem/go-naming-polarismesh.svg?style=flat-square)](https://github.com/trpc-ecosystem/go-naming-polarismesh/releases)
-[![Docs](https://img.shields.io/badge/docs-latest-green)](http://test.trpc.group.woa.com/docs/)
-[![Tests](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/prc.yaml/badge.svg)](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/prc.yaml)
+[![Tests](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/prc.yml/badge.svg)](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/prc.yml)
 [![Coverage](https://codecov.io/gh/trpc-ecosystem/go-naming-polarismesh/branch/main/graph/badge.svg)](https://app.codecov.io/gh/trpc-ecosystem/go-naming-polarismesh/tree/main)
 
 包括了“服务注册、服务发现、负载均衡、熔断器”等组件，通过框架配置可以在 tRPC-Go 框架内部使用，也可以整体使用。
