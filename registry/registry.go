@@ -48,9 +48,6 @@ type Registry struct {
 
 // newRegistry is to new an instance.
 func newRegistry(provider api.ProviderAPI, cfg *Config) (*Registry, error) {
-	if len(cfg.ServiceToken) == 0 {
-		return nil, fmt.Errorf("service: %s, token can not be empty", cfg.ServiceName)
-	}
 	if cfg.HeartBeat == 0 {
 		cfg.HeartBeat = defaultHeartBeat
 	}
