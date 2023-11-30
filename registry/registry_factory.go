@@ -59,13 +59,14 @@ type ClusterService struct {
 
 // Service is service configuration.
 type Service struct {
-	Namespace   string            `yaml:"namespace"`
-	ServiceName string            `yaml:"name"`
-	Token       string            `yaml:"token"`
-	InstanceID  string            `yaml:"instance_id"`
-	Weight      *int              `yaml:"weight"`
-	BindAddress string            `yaml:"bind_address"`
-	MetaData    map[string]string `yaml:"metadata"`
+	Namespace         string            `yaml:"namespace"`
+	ServiceName       string            `yaml:"name"`
+	Token             string            `yaml:"token"`
+	InstanceID        string            `yaml:"instance_id"`
+	Weight            *int              `yaml:"weight"`
+	BindAddress       string            `yaml:"bind_address"`
+	PreferBindAddress bool              `yaml:"prefer_bind_address"`
+	MetaData          map[string]string `yaml:"metadata"`
 }
 
 func init() {
@@ -162,6 +163,7 @@ func register(provider api.ProviderAPI, conf *FactoryConfig) error {
 			InstanceID:         service.InstanceID,
 			Metadata:           service.MetaData,
 			BindAddress:        service.BindAddress,
+			PreferBindAddress:  service.PreferBindAddress,
 			Weight:             service.Weight,
 			DisableHealthCheck: conf.DisableHealthCheck,
 			InstanceLocation:   conf.InstanceLocation,
