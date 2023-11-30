@@ -17,6 +17,7 @@ package registry
 import (
 	"fmt"
 	"net"
+	"os"
 	"strconv"
 	"time"
 
@@ -91,10 +92,13 @@ func (r *Registry) Register(_ string, opt ...registry.Option) error {
 	for _, o := range opt {
 		o(opts)
 	}
-	address := r.cfg.BindAddress
-	if opts.Address != "" {
-		address = opts.Address
+
+	address := opts.Address
+	if address == "" || r.cfg.PreferBindAddress {
+		address = r.cfg.BindAddress
+		address = os.ExpandEnv(address) // also allow environ
 	}
+
 	host, portRaw, _ := net.SplitHostPort(address)
 	port, _ := strconv.ParseInt(portRaw, 10, 64)
 	r.host = host

@@ -135,6 +135,7 @@ plugins:  # Plugin configurations.
       #     instance_id: yyyyyyyyyyyyyyyy
       #     weight: 100  # Set weight.
       #     bind_address: eth1:8080  # (optional) set listen addr, use the addr in service as default.
+      #     prefer_bind_address: true  # (optional) give bind_address priority over addr in service if true. Default as false.
       #     metadata:  # The user defined metadata.
       #       internal-enable-set: Y  # Enable set, (both this line and the next line need to be set to fully enable set).
       #       internal-set-name: xx.yy.sz  # Enable set name.

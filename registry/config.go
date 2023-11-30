@@ -37,6 +37,8 @@ type Config struct {
 	ServiceName string
 	// BindAddress specifies reporting address.
 	BindAddress string
+	// PreferBindAddress gives the BindAddress higher priority over service TRPC's opts.Address when it is true.
+	PreferBindAddress bool
 	// Metadata User-defined metadata information.
 	Metadata map[string]string
 	// DisableHealthCheck disables healthcheck.
