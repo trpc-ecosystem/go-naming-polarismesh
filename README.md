@@ -128,7 +128,6 @@ plugins:  # Plugin configurations.
       # service:  # Services to be registered.
       #   - name: trpc.server.Service1  # Service name, should keep consistent with service in server config in trpc_go.yaml.
       #     namespace: Development  # The namespace this service belongs to.
-      #     token: xxxxxxxxxxxxxxxxxxx  # Apply your token in polaris mesh console.
       #     # (Optional) Used to heartbeat or unregister.
       #     # When register_self is true, this config has no effect, the plugin will use returned instance_id of register to overwrite config.
       #     # if register_self is false, instance_id cannot be missing.

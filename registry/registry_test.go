@@ -78,12 +78,7 @@ plugins:
 
 func TestNew(t *testing.T) {
 	_, err := newRegistry(nil, &Config{})
-	assert.NotNil(t, err)
-
-	_, err = newRegistry(nil, &Config{
-		ServiceToken: "token",
-	})
-	assert.Nil(t, err)
+	require.Nil(t, err)
 }
 
 func TestRegisterDeRegister(t *testing.T) {
