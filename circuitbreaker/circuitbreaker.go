@@ -17,11 +17,13 @@ package circuitbreaker
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"trpc.group/trpc-go/trpc-go/errs"
 	"trpc.group/trpc-go/trpc-go/naming/circuitbreaker"
 	"trpc.group/trpc-go/trpc-go/naming/registry"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/internal/polaris"
 
 	"github.com/polarismesh/polaris-go/api"
 	"github.com/polarismesh/polaris-go/pkg/model"
@@ -38,6 +40,9 @@ type Config struct {
 
 const (
 	errRetCode = 10000
+	// sdkErrRetCode is the sentinel used by the SDK when a failed call has no
+	// protocol response code. The legacy statistics code remains errRetCode.
+	sdkErrRetCode int32 = -1
 	// DeltaTimeout is the default minimum request cost to trigger circuit breaker.
 	DeltaTimeout = time.Millisecond
 )
@@ -54,6 +59,7 @@ func Setup(sdkCtx api.SDKContext, cfg *Config, setDefault bool) error {
 	}
 	cb := &CircuitBreaker{
 		consumer:           api.NewConsumerAPIByContext(sdkCtx),
+		circuitBreaker:     api.NewCircuitBreakerByContext(sdkCtx),
 		shouldCircuitBreak: newShouldCircuitBreak(minClientTimeout),
 	}
 	circuitbreaker.Register(name, cb)
@@ -66,19 +72,33 @@ func Setup(sdkCtx api.SDKContext, cfg *Config, setDefault bool) error {
 // CircuitBreaker is the circuit breaker structure.
 type CircuitBreaker struct {
 	consumer           api.ConsumerAPI
+	circuitBreaker     api.CircuitBreakerAPI
 	shouldCircuitBreak func(error, time.Duration) Should
 }
 
 // Available determines whether the node is available.
 func (cb *CircuitBreaker) Available(node *registry.Node) bool {
+	if node == nil || node.Metadata == nil {
+		return false
+	}
+	allowOpen := false
+	if value, ok := node.Metadata[polaris.AllowOpenMetadataKey].(bool); ok {
+		allowOpen = value
+	}
 	inst, ok := node.Metadata["instance"].(model.Instance)
 	if !ok {
 		return false
 	}
-	if inst.GetCircuitBreakerStatus() == nil {
+	status := inst.GetCircuitBreakerStatus()
+	if status == nil {
 		return true
 	}
-	return inst.GetCircuitBreakerStatus().IsAvailable()
+	if status.GetStatus() == model.HalfOpen {
+		if halfOpen, ok := status.(*model.HalfOpenStatus); ok {
+			return halfOpen.AllocatedCount() < int64(halfOpen.MaxRequest())
+		}
+	}
+	return allowOpen || status.GetStatus() != model.Open
 }
 
 // Report reports the request status.
@@ -96,19 +116,7 @@ func (cb *CircuitBreaker) Report(node *registry.Node, cost time.Duration, err er
 			return nil
 		}
 	}
-	inst, ok := node.Metadata["instance"].(model.Instance)
-	if !ok {
-		return errors.New("report err: invalid instance")
-	}
-
-	return cb.consumer.UpdateServiceCallResult(&api.ServiceCallResult{
-		ServiceCallResult: model.ServiceCallResult{
-			CalledInstance: inst,
-			RetStatus:      retStatus,
-			Delay:          &cost,
-			RetCode:        &retCode,
-		},
-	})
+	return reportCallResult(cb.consumer, cb.circuitBreaker, node, cost, retStatus, retCode)
 }
 
 // Report reports the request status.
@@ -129,10 +137,66 @@ func Report(
 		retStatus = model.RetFail
 		retCode = errRetCode
 	}
+	sdkCtx := consumer.SDKContext()
+	return reportCallResult(consumer, api.NewCircuitBreakerByContext(sdkCtx),
+		node, cost, retStatus, retCode)
+}
+
+func reportCallResult(
+	consumer api.ConsumerAPI,
+	circuitBreaker api.CircuitBreakerAPI,
+	node *registry.Node,
+	cost time.Duration,
+	retStatus model.RetStatus,
+	retCode int32,
+) error {
+	if node == nil || node.Metadata == nil {
+		return errors.New("report err: invalid node metadata")
+	}
 	inst, ok := node.Metadata["instance"].(model.Instance)
 	if !ok {
 		return errors.New("report err: invalid instance")
 	}
+
+	sdkCtx := consumer.SDKContext()
+	if sdkCtx == nil {
+		return errors.New("report err: nil sdk context")
+	}
+	var reportErr error
+	if polaris.CircuitBreakerEnabled(sdkCtx) {
+		caller := nodeCallerServiceKey(node)
+		serviceResource, err := polaris.InstanceServiceResource(inst, caller)
+		if err != nil {
+			return fmt.Errorf("report err: build service resource: %w", err)
+		}
+		instanceResource, err := polaris.InstanceResource(inst, caller)
+		if err != nil {
+			return fmt.Errorf("report err: build instance resource: %w", err)
+		}
+		resources := []model.Resource{serviceResource, instanceResource}
+		if methodResource, ok := node.Metadata[polaris.MethodResourceMetadataKey].(*model.MethodResource); ok && methodResource != nil {
+			resources = []model.Resource{serviceResource, methodResource, instanceResource}
+		}
+		resourceRetCode := retCode
+		if retStatus == model.RetFail {
+			resourceRetCode = sdkErrRetCode
+		}
+		if circuitBreaker == nil {
+			reportErr = errors.New("report circuit breaker err: nil circuit breaker api")
+		} else {
+			for _, resource := range resources {
+				if err := circuitBreaker.Report(&model.ResourceStat{
+					Resource:  resource,
+					RetCode:   strconv.Itoa(int(resourceRetCode)),
+					Delay:     cost,
+					RetStatus: retStatus,
+				}); err != nil && reportErr == nil {
+					reportErr = fmt.Errorf("report circuit breaker err: %w", err)
+				}
+			}
+		}
+	}
+
 	if err := consumer.UpdateServiceCallResult(&api.ServiceCallResult{
 		ServiceCallResult: model.ServiceCallResult{
 			CalledInstance: inst,
@@ -140,10 +204,17 @@ func Report(
 			Delay:          &cost,
 			RetCode:        &retCode,
 		},
-	}); err != nil {
-		return fmt.Errorf("report err: %v", err)
+	}); err != nil && reportErr == nil {
+		return fmt.Errorf("report err: %w", err)
 	}
-	return nil
+	return reportErr
+}
+
+func nodeCallerServiceKey(node *registry.Node) *model.ServiceKey {
+	if value, ok := node.Metadata[polaris.CallerServiceMetadataKey]; ok {
+		return polaris.SourceServiceKey(value)
+	}
+	return polaris.SourceServiceKey(node.Metadata[polaris.SourceServiceMetadataKey])
 }
 
 func canIgnoreError(e error, reportTimeout, cost time.Duration) bool {
@@ -152,8 +223,8 @@ func canIgnoreError(e error, reportTimeout, cost time.Duration) bool {
 	}
 	// when errorCode==101 && cost < reportTimeout && errorType==framework,
 	// the circuit breaker will consider it as a normal situation.
-	err, ok := e.(*errs.Error)
-	if ok &&
+	var err *errs.Error
+	if errors.As(e, &err) && err != nil &&
 		err.Code == errs.RetClientTimeout &&
 		err.Type == errs.ErrorTypeFramework &&
 		cost < reportTimeout {
@@ -198,10 +269,12 @@ func ShouldCircuitBreak(f func(error) Should) {
 // newShouldCircuitBreak creates a default circuit breaker error checking strategy, which is also a bottom-up strategy.
 var newShouldCircuitBreak = func(minClientTimeout time.Duration) func(error, time.Duration) Should {
 	return func(err error, cost time.Duration) Should {
-		if e, ok := err.(*errs.Error); ok &&
+		var e *errs.Error
+		if errors.As(err, &e) && e != nil &&
 			e.Type == errs.ErrorTypeFramework &&
 			(e.Code == errs.RetClientConnectFail ||
 				e.Code == errs.RetClientNetErr ||
+				e.Code == errs.RetClientReadFrameErr ||
 				e.Code == errs.RetClientTimeout && cost >= minClientTimeout) {
 			return True
 		}

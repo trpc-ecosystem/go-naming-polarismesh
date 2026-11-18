@@ -1,3 +1,5 @@
+[English](#community-code-of-conduct) | [中文](#社区行为准则)
+
 # Community Code of Conduct
 
 Welcome to our open source project!

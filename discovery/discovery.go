@@ -65,7 +65,6 @@ func checkOpts(serviceName string, opt ...discovery.Option) (*discovery.Options,
 
 // List gets a list of instances of a service.
 func (d *Discovery) List(serviceName string, opt ...discovery.Option) (nodes []*registry.Node, err error) {
-
 	opts, err := checkOpts(serviceName, opt...)
 	if err != nil {
 		return nil, err

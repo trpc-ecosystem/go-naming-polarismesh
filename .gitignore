@@ -1,0 +1,21 @@
+/.agents/
+/specs/
+/examples/**/.build/
+/examples/**/.logs/
+/examples/**/.state/
+/examples/**/.*-pids
+/examples/**/.polaris-cache/
+/examples/**/polaris/
+/integration/cloud/.build/
+/integration/cloud/.logs/
+/integration/cloud/dist/
+/cloud-runs/
+
+# Root-level binaries produced by example builds.
+/client
+/provider
+
+# Polaris Go SDK runtime logs and local cache
+/**/polaris/
+!/internal/polaris/
+!/internal/polaris/**

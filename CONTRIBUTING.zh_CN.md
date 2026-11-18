@@ -13,6 +13,8 @@
 
 项目欢迎代码补丁，但为了确保事情得到良好协调，您应该在开始工作之前讨论任何重大变更。
 建议您在 issue 跟踪器中表明您的贡献意图，可以通过[认领现有 issue](https://github.com/trpc-ecosystem/go-naming-polarismesh/issues)或[创建新 issue](https://github.com/trpc-ecosystem/go-naming-polarismesh/issues/new) 来实现。
+当前模块语言版本为 Go 1.21。生产构建和发布产物应使用 Go 1.26.11 或更高的
+安全补丁工具链。
 
 ### 查看 issue 跟踪器
 

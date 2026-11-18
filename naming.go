@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"trpc.group/trpc-go/trpc-go/plugin"
@@ -33,6 +34,9 @@ import (
 	"github.com/polarismesh/polaris-go/pkg/config"
 	plog "github.com/polarismesh/polaris-go/pkg/log"
 	"github.com/polarismesh/polaris-go/pkg/model"
+	polarisplugin "github.com/polarismesh/polaris-go/pkg/plugin"
+	"github.com/polarismesh/polaris-go/pkg/plugin/common"
+	_ "github.com/polarismesh/polaris-go/plugin/circuitbreaker/composite"
 	"github.com/polarismesh/polaris-go/plugin/location"
 	"gopkg.in/yaml.v3"
 )
@@ -40,6 +44,11 @@ import (
 func init() {
 	plugin.Register("polarismesh", &SelectorFactory{})
 }
+
+var logPluginVersion = newVersionLogger(func() {
+	plog.GetBaseLogger().Infof(
+		"[NAMING-POLARISMESH] go-naming-polarismesh version=%s", Version)
+})
 
 // Config framework configuration.
 type Config struct {
@@ -192,7 +201,7 @@ func (c *Config) getEnableServiceRouter() bool {
 	return isEnable
 }
 
-func (c *Config) setLog() {
+func (c *Config) setLog() error {
 	if l := c.Logs; l != nil {
 		newLogOptions := func(path string) *plog.Options {
 			o := plog.CreateDefaultLoggerOptions(filepath.Join(l.DirPath, path), getLogLevel(l.Level))
@@ -207,8 +216,11 @@ func (c *Config) setLog() {
 		_ = plog.ConfigNetworkLogger(plog.DefaultLogger, newLogOptions(plog.DefaultNetworkLogRotationPath))
 	}
 	if c.Debug {
-		plog.GetBaseLogger().SetLogLevel(plog.DebugLog)
+		if err := plog.GetBaseLogger().SetLogLevel(plog.DebugLog); err != nil {
+			return fmt.Errorf("set polaris mesh log level debug: %w", err)
+		}
 	}
+	return nil
 }
 
 // Setup initialization.
@@ -244,12 +256,22 @@ func setupWithConfig(conf *Config) (api.SDKContext, error) {
 	}
 
 	// Initialization log.
-	conf.setLog()
+	if err := conf.setLog(); err != nil {
+		return nil, err
+	}
+	logPluginVersion()
 	sdkCtx, err := newSDKContext(conf)
 	if err != nil {
 		return nil, fmt.Errorf("new sdk ctx err: %w", err)
 	}
 	return sdkCtx, setupComponents(sdkCtx, conf)
+}
+
+func newVersionLogger(logFn func()) func() {
+	var once sync.Once
+	return func() {
+		once.Do(logFn)
+	}
 }
 
 func setupComponents(sdkCtx api.SDKContext, conf *Config) error {
@@ -303,11 +325,11 @@ func setupLoadbalance(sdkCtx api.SDKContext, conf *Config, setDefault bool) erro
 	if len(conf.Loadbalance.Name) == 0 {
 		conf.Loadbalance.Name = append(
 			conf.Loadbalance.Name,
-			loadbalance.LoadBalancerWR,
-			loadbalance.LoadBalancerHash,
-			loadbalance.LoadBalancerRingHash,
-			loadbalance.LoadBalancerL5CST,
-			loadbalance.LoadBalancerMaglev,
+			"polaris_wr",
+			"polaris_hash",
+			"polaris_ring_hash",
+			"polaris_l5cst",
+			"polaris_maglev",
 		)
 	}
 	for index, balanceType := range conf.Loadbalance.Name {
@@ -321,9 +343,13 @@ func setupLoadbalance(sdkCtx api.SDKContext, conf *Config, setDefault bool) erro
 	return nil
 }
 
-func setSdkCircuitBreaker(c config.Configuration, cfg *Config) {
+func setSdkCircuitBreaker(c config.Configuration, cfg *Config) error {
+	chain, err := normalizeCircuitBreakerChain(cfg.CircuitBreaker.Chain)
+	if err != nil {
+		return err
+	}
 	if len(cfg.CircuitBreaker.Chain) > 0 {
-		c.GetConsumer().GetCircuitBreaker().SetChain(cfg.CircuitBreaker.Chain)
+		c.GetConsumer().GetCircuitBreaker().SetChain(chain)
 	}
 	if cfg.CircuitBreaker.CheckPeriod != nil {
 		c.GetConsumer().GetCircuitBreaker().SetCheckPeriod(*cfg.CircuitBreaker.CheckPeriod)
@@ -337,44 +363,127 @@ func setSdkCircuitBreaker(c config.Configuration, cfg *Config) {
 	if cfg.CircuitBreaker.SuccessCountAfterHalfOpen != nil {
 		c.GetConsumer().GetCircuitBreaker().SetSuccessCountAfterHalfOpen(*cfg.CircuitBreaker.SuccessCountAfterHalfOpen)
 	}
-	setErrorCount(c, cfg)
-	setErrorRate(c, cfg)
+	if err := setErrorRate(c, cfg); err != nil {
+		return err
+	}
+	if err := setErrorCount(c, cfg); err != nil {
+		return err
+	}
+	if err := validateCompositeInterval(c); err != nil {
+		return err
+	}
+	return nil
 }
 
-func setErrorCount(c config.Configuration, cfg *Config) {
+func normalizeCircuitBreakerChain(chain []string) ([]string, error) {
+	if len(chain) == 0 {
+		return nil, nil
+	}
+
+	legacyNames := map[string]string{
+		config.DefaultCircuitBreakerErrCount: config.DefaultCircuitBreaker,
+		config.DefaultCircuitBreakerErrRate:  config.DefaultCircuitBreaker,
+	}
+	legacyStrategies := make(map[string]struct{}, 2)
+	normalized := make([]string, 0, len(chain))
+	seen := make(map[string]struct{}, len(chain))
+	for _, name := range chain {
+		target, legacy := legacyNames[name]
+		if !legacy {
+			if !polarisplugin.IsPluginRegistered(common.TypeCircuitBreaker, name) {
+				return nil, fmt.Errorf("circuitbreaker chain plugin %s is not registered", name)
+			}
+			target = name
+		} else {
+			legacyStrategies[name] = struct{}{}
+		}
+		if _, ok := seen[target]; ok {
+			continue
+		}
+		seen[target] = struct{}{}
+		normalized = append(normalized, target)
+	}
+	// The composite plugin always creates both default triggers. Accepting a
+	// single legacy strategy here would silently widen the configured behavior.
+	if len(legacyStrategies) > 0 && len(legacyStrategies) != len(legacyNames) {
+		return nil, fmt.Errorf(
+			"circuitbreaker chain %v cannot preserve a single legacy strategy with polaris-go composite; "+
+				"use both errorCount and errorRate, or configure a supported circuitbreaker plugin",
+			chain)
+	}
+	return normalized, nil
+}
+
+func setErrorCount(c config.Configuration, cfg *Config) error {
 	if cfg.CircuitBreaker.ErrorCount == nil {
-		return
+		return nil
 	}
 	errorCount := cfg.CircuitBreaker.ErrorCount
 	if errorCount.ContinuousErrorThreshold != nil {
-		c.GetConsumer().GetCircuitBreaker().GetErrorCountConfig().
-			SetContinuousErrorThreshold(*errorCount.ContinuousErrorThreshold)
-	}
-	if errorCount.MetricNumBuckets != nil {
-		c.GetConsumer().GetCircuitBreaker().GetErrorCountConfig().SetMetricNumBuckets(*errorCount.MetricNumBuckets)
+		c.GetConsumer().GetCircuitBreaker().SetDefaultErrorCount(*errorCount.ContinuousErrorThreshold)
 	}
 	if errorCount.MetricStatTimeWindow != nil {
-		c.GetConsumer().GetCircuitBreaker().GetErrorCountConfig().SetMetricStatTimeWindow(*errorCount.MetricStatTimeWindow)
+		interval := c.GetConsumer().GetCircuitBreaker().GetDefaultInterval()
+		if interval == 0 {
+			interval = config.DefaultInterval
+		}
+		if cfg.CircuitBreaker.ErrorRate != nil && cfg.CircuitBreaker.ErrorRate.MetricStatTimeWindow != nil {
+			interval = *cfg.CircuitBreaker.ErrorRate.MetricStatTimeWindow
+		}
+		if *errorCount.MetricStatTimeWindow != interval {
+			return fmt.Errorf(
+				"circuitbreaker.errorCount.metricStatTimeWindow %s is not supported by polaris-go composite, "+
+					"use errorRate.metricStatTimeWindow %s instead",
+				*errorCount.MetricStatTimeWindow, interval)
+		}
 	}
+	return nil
 }
 
-func setErrorRate(c config.Configuration, cfg *Config) {
+func setErrorRate(c config.Configuration, cfg *Config) error {
 	if cfg.CircuitBreaker.ErrorRate == nil {
-		return
+		return nil
 	}
 	errorRate := cfg.CircuitBreaker.ErrorRate
 	if errorRate.ErrorRateThreshold != nil {
-		c.GetConsumer().GetCircuitBreaker().GetErrorRateConfig().SetErrorRatePercent(int(*errorRate.ErrorRateThreshold * 100))
-	}
-	if errorRate.MetricNumBuckets != nil {
-		c.GetConsumer().GetCircuitBreaker().GetErrorRateConfig().SetMetricNumBuckets(*errorRate.MetricNumBuckets)
+		c.GetConsumer().GetCircuitBreaker().SetDefaultErrorPercent(int(*errorRate.ErrorRateThreshold * 100))
 	}
 	if errorRate.RequestVolumeThreshold != nil {
-		c.GetConsumer().GetCircuitBreaker().GetErrorRateConfig().SetRequestVolumeThreshold(*errorRate.RequestVolumeThreshold)
+		c.GetConsumer().GetCircuitBreaker().SetDefaultMinimumRequest(*errorRate.RequestVolumeThreshold)
 	}
 	if errorRate.MetricStatTimeWindow != nil {
-		c.GetConsumer().GetCircuitBreaker().GetErrorRateConfig().SetMetricStatTimeWindow(*errorRate.MetricStatTimeWindow)
+		c.GetConsumer().GetCircuitBreaker().SetDefaultInterval(*errorRate.MetricStatTimeWindow)
 	}
+	return nil
+}
+
+func validateCompositeInterval(c config.Configuration) error {
+	breaker := c.GetConsumer().GetCircuitBreaker()
+	if !breaker.IsEnable() || !usesCompositeCircuitBreaker(breaker.GetChain()) {
+		return nil
+	}
+	interval := breaker.GetDefaultInterval()
+	if interval == 0 {
+		return nil
+	}
+	if interval < time.Second || interval%time.Second != 0 {
+		return fmt.Errorf(
+			"circuitbreaker defaultInterval %s is invalid: polaris-go composite requires a whole number of seconds and at least 1s",
+			interval)
+	}
+	return nil
+}
+
+func usesCompositeCircuitBreaker(chain []string) bool {
+	if len(chain) == 0 {
+		return true
+	}
+	for _, name := range chain {
+		if name == config.DefaultCircuitBreaker {
+			return true
+		}
+	}
+	return false
 }
 
 func setSdkProperty(c config.Configuration, cfg *Config) {
@@ -461,9 +570,7 @@ func newSDKContext(cfg *Config) (api.SDKContext, error) {
 
 	// Add a plugin to filter according to the called service env.
 	routers = append(routers, config.DefaultServiceRouterDstMeta)
-	for _, router := range c.GetConsumer().GetServiceRouter().GetChain() {
-		routers = append(routers, router)
-	}
+	routers = append(routers, c.GetConsumer().GetServiceRouter().GetChain()...)
 
 	// Add canary routing chain.
 	if cfg.EnableCanary != nil && *cfg.EnableCanary {
@@ -485,7 +592,9 @@ func newSDKContext(cfg *Config) (api.SDKContext, error) {
 
 	c.GetGlobal().GetServerConnector().SetMessageTimeout(messageTimeout)
 	// Configure circuit breaker policy.
-	setSdkCircuitBreaker(c, cfg)
+	if err := setSdkCircuitBreaker(c, cfg); err != nil {
+		return nil, fmt.Errorf("configure circuit breaker policy: %w", err)
+	}
 	// Configure location properties.
 	setLocation(c, cfg)
 	// Configure other properties.

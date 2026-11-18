@@ -1,0 +1,30 @@
+global:
+  namespace: __NAMESPACE__
+  env_name: e2e
+
+server:
+  app: polaris
+  server: e2e
+  service:
+    - name: __SERVICE__
+      ip: ${PROVIDER_HOST}
+      port: __PORT__
+      network: tcp
+      protocol: trpc
+      registry: polarismesh
+      timeout: 3000
+
+plugins:
+  registry:
+    polarismesh:
+      register_self: true
+      heartbeat_interval: 3000
+      protocol: grpc
+      address_list: __POLARIS__:__POLARIS_GRPC_PORT__
+      service:
+        - name: __SERVICE__
+          namespace: __NAMESPACE__
+          version: __VERSION__
+          weight: __WEIGHT__
+          metadata:
+            e2e-static: config

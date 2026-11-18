@@ -14,4 +14,4 @@
 package naming
 
 // Version is the polaris mesh version.
-const Version = "v0.2.7"
+const Version = "v1.1.0"

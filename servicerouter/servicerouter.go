@@ -24,6 +24,7 @@ import (
 	"trpc.group/trpc-go/trpc-go/log"
 	"trpc.group/trpc-go/trpc-go/naming/registry"
 	tsr "trpc.group/trpc-go/trpc-go/naming/servicerouter"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/internal/polaris"
 
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/polarismesh/polaris-go/api"
@@ -261,13 +262,12 @@ func (s *ServiceRouter) filterWithEnv(
 		return nil, fmt.Errorf("filter instance with env err: %s", err.Error())
 	}
 
-	return s.instanceToNode(instances, opts.EnvTransfer, cluster, serviceInstances), nil
+	return s.instanceToNode(instances, sourceService, opts.EnvTransfer, cluster, serviceInstances), nil
 }
 
 func (s *ServiceRouter) filter(
 	serviceInstances model.ServiceInstances,
 	sourceService, destService *model.ServiceInfo, opts *tsr.Options) ([]*registry.Node, error) {
-
 	sourceRouteRules, err := s.consumer.GetRouteRule(&api.GetServiceRuleRequest{
 		GetServiceRuleRequest: model.GetServiceRuleRequest{
 			Namespace: sourceService.Namespace,
@@ -338,7 +338,7 @@ func (s *ServiceRouter) filter(
 			opts.SourceEnvName, opts.EnvKey)
 	}
 
-	return s.instanceToNode(instances, newEnvStr, cluster, serviceInstances), nil
+	return s.instanceToNode(instances, sourceService, newEnvStr, cluster, serviceInstances), nil
 }
 
 func (s *ServiceRouter) filterWithoutServiceRouter(
@@ -371,7 +371,7 @@ func (s *ServiceRouter) filterWithoutServiceRouter(
 	if len(instances) == 0 {
 		return nil, errors.New("filter instances no instances available")
 	}
-	return s.instanceToNode(instances, "", cluster, serviceInstances), nil
+	return s.instanceToNode(instances, sourceService, "", cluster, serviceInstances), nil
 }
 
 // Filter filters instances based on routing rules.
@@ -490,7 +490,8 @@ func buildRouteRules(sourceNamespace, sourceServiceName,
 }
 
 func (s *ServiceRouter) instanceToNode(instances []model.Instance,
-	env string, cluster *model.Cluster, resp model.ServiceInstances) []*registry.Node {
+	sourceService *model.ServiceInfo, env string, cluster *model.Cluster,
+	resp model.ServiceInstances) []*registry.Node {
 	if len(instances) == 0 {
 		return nil
 	}
@@ -509,8 +510,11 @@ func (s *ServiceRouter) instanceToNode(instances []model.Instance,
 	}
 	list[0].EnvKey = env
 	list[0].Metadata = map[string]interface{}{
-		"serviceInstances": resp,
-		"cluster":          cluster,
+		"serviceInstances":               resp,
+		"cluster":                        cluster,
+		polaris.SourceServiceMetadataKey: sourceService,
+		polaris.CallerServiceMetadataKey: polaris.SourceServiceKey(sourceService),
+		polaris.AllowOpenMetadataKey:     cluster != nil && cluster.HasLimitedInstances,
 	}
 	return list
 }

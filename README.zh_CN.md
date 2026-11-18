@@ -6,10 +6,42 @@
 [![Go Report Card](https://goreportcard.com/badge/trpc.group/trpc-go/trpc-naming-polarismesh)](https://goreportcard.com/report/trpc.group/trpc-go/trpc-naming-polarismesh)
 [![LICENSE](https://img.shields.io/badge/license-Apache--2.0-green.svg)](https://github.com/trpc-ecosystem/go-naming-polarismesh/blob/main/LICENSE)
 [![Releases](https://img.shields.io/github/release/trpc-ecosystem/go-naming-polarismesh.svg?style=flat-square)](https://github.com/trpc-ecosystem/go-naming-polarismesh/releases)
-[![Tests](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/prc.yml/badge.svg)](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/prc.yml)
+[![Tests](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/testing.yml/badge.svg)](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/testing.yml)
 [![Coverage](https://codecov.io/gh/trpc-ecosystem/go-naming-polarismesh/branch/main/graph/badge.svg)](https://app.codecov.io/gh/trpc-ecosystem/go-naming-polarismesh/tree/main)
 
 包括了“服务注册、服务发现、负载均衡、熔断器”等组件，通过框架配置可以在 tRPC-Go 框架内部使用，也可以整体使用。
+
+语言版本为 Go 1.21。由于 Go 1.21 已不再获得标准库安全修复，
+生产构建建议使用 Go 1.26.11 或更高的安全补丁版本。
+API 差异和迁移方式见 [COMPATIBILITY.zh_CN.md](./COMPATIBILITY.zh_CN.md)。
+
+可直接运行的 Go 示例位于 [examples](./examples)。建议先看
+[HelloWorld](./examples/helloworld)：其中包含 proto 协议、生成桩、Server、
+Client 和独立的 Polaris YAML 配置，Client 同时展示两种寻址方式。完整测试
+覆盖动态 metadata、负载均衡、熔断故障转移、metadata 路由、多 Context 隔离、
+多 endpoint 注册；Polaris 地址始终在运行时提供。
+
+`examples/` 下每个可运行示例都提供真实 Polaris `verify.sh` 入口。可通过
+`examples/verify_all.sh --polaris-server <host>` 运行完整验证。
+验证结束会保留进程和资源供排查；`examples/cleanup.sh` 用于停止进程，
+`examples/cleanup.sh --delete-service --polaris-server <host>` 用于删除远端
+服务和规则。
+
+远端部署验证可以构建携带预编译示例二进制的 Linux 部署包：
+
+```bash
+./integration/cloud/build-package.sh
+```
+
+上传、校验并解压部署包后，只运行通用 Registry 用例：
+
+```bash
+./run-e2e.sh --server <polaris-host>:8091 --only registry
+```
+
+云端不需要安装 Go。每次运行会生成记录、逐场景日志和带校验和的日志包，可
+下载到本地后通过 `integration/cloud/import-logs.sh` 安全导入并汇总。完整
+流程见 [integration/cloud/README.zh_CN.md](./integration/cloud/README.zh_CN.md)。
 
 ## 如何使用
 引入北极星插件
@@ -89,6 +121,45 @@ func main() {
 
 [link](./registry)
 
+### 动态注册 metadata
+
+运行时生成的 metadata 可以通过 `registry.RegisterMetadataProvider` 按 service
+注册 provider。需要同时更新实例字段时使用 `RegistrationSnapshotProviderFunc`，一次原子
+返回 metadata、host、实例 version、port 和 protocol。插件不解析 metadata；
+协议专属校验由应用或扩展层完成。
+
+```go
+import polarisregistry "trpc.group/trpc-go/trpc-naming-polarismesh/registry"
+
+s := trpc.NewServer()
+provider := polarisregistry.RegistrationSnapshotProviderFunc(func() (
+    polarisregistry.RegistrationSnapshot, error,
+) {
+    return polarisregistry.RegistrationSnapshot{
+        Metadata: map[string]string{
+            "deployment": "green",
+            "descriptor": `{"revision":"v1.2.3"}`,
+        },
+        Host:             "10.0.0.10",
+        Version:          "v1.2.3",
+        RegistrationPort: 9000,
+        Protocol:         "",
+        SetProtocol:      true,
+    }, nil
+})
+if err := polarisregistry.RegisterMetadataProvider("trpc.app.server.Service", provider); err != nil {
+    return err
+}
+defer polarisregistry.UnregisterMetadataProvider("trpc.app.server.Service")
+if err := s.Serve(); err != nil {
+    return err
+}
+```
+
+provider 必须在 `Serve` 注册实例前完成设置。需要复用北极星 SDK 上下文的适配层可通过
+`FromFramework(service)` 获取 `Registry`，再使用 `Registry.SDKContext()`；不要重新创建第三套
+SDKContext。合并规则、冲突处理和关闭顺序见 [registry/README.md](./registry/README.md)。
+
 ### 负载均衡
 
 一致性 hash 或者普通 hash 负载均衡方式使用如下：
@@ -131,6 +202,7 @@ plugins:  # 插件配置
       # service:                          # 需要进行注册的各服务信息
       #   - name: trpc.server.Service1    # 服务名1, 一般和 trpc_go.yaml 中 server config 处的各个 service 一一对应
       #     namespace: Development        # 该服务需要注册的命名空间
+      #     version: v1.2.3              # （可选）实例版本
       #     token: xxxxxxxxxxxxxxxxxxx    # 前往北极星控制台进行申请或查看
       #     # （可选）用于服务的心跳上报或反注册。
       #     # 当 register_self 为 true 时，这里的配置无效，插件会使用注册返回的 instance_id 覆盖这里的值。
@@ -200,6 +272,11 @@ plugins:  # 插件配置
       #     metricNumBuckets: 5         # 错误率熔断的最小统计单元数量，默认值：5
       #     metricStatTimeWindow: 1m0s  # 错误率熔断的统计周期，默认值：1m
       #     requestVolumeThreshold: 10  # 触发错误率熔断的最低请求阈值，默认值：10
+      #     Polaris SDK 1.7.x 使用 composite 插件同时实现两类策略。
+      #     旧的 errorCount/errorRate 链名会被兼容并归一为 composite。
+#     两个链名必须同时配置；单策略会被初始化拒绝，因为 composite 总是同时启用两类默认触发器。
+      #     composite 只有一个错误率统计周期，因此 errorCount.metricStatTimeWindow
+      #     必须省略，或与 errorRate.metricStatTimeWindow 保持一致。
       # service_router:
       #   nearby_matchlevel: zone        # 就近路由的最小匹配级别，包括 region（大区）、zone（区域）、campus（园区）, 默认为 zone
       #   percent_of_min_instances: 0.2  # 全死全活的最小健康实例例判断阈值，值的范围为 [0,1] 之间，默认为 0，即只有当所有实例都不健康时，才开启全死全活

@@ -1,7 +1,9 @@
 ---
 name: Bugs
-about: config, server, client, or anything else
+about: Report a registration, discovery, routing, load balancing, circuit breaking, or integration defect
 title: "affected/package: "
+labels: bug
+assignees: ""
 ---
 
 <!--
@@ -12,6 +14,13 @@ Please answer these questions before submitting your issue. Thanks!
 
 
 ### Does this issue reproduce with the latest release?
+
+
+### What Polaris server version and deployment environment are you using?
+
+
+
+### Does this involve ordinary naming, AI Registry AgentCard, MCP, or routing?
 
 
 

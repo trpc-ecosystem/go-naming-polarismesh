@@ -1,7 +1,9 @@
 ---
 name: Features
-about: config, server, client, or anything else
+about: Suggest a new capability or improvement for the naming plugin
 title: "affected/package: "
+labels: enhancement
+assignees: ""
 ---
 
 <!--
