@@ -1,0 +1,117 @@
+name: Testing
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+      - "feature/**"
+      - "feat/**"
+  pull_request:
+    branches:
+      - main
+      - "release/**"
+      - "feature/**"
+      - "feat/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: testing-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO111MODULE: on
+  GOTOOLCHAIN: local
+
+jobs:
+  build:
+    name: go-${{ matrix.go }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.21", "1.26.11"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true
+      - name: Download dependencies
+        run: go mod download
+      - name: Build
+        run: go build -v ./...
+      - name: Test
+        run: go test -v -count=1 -timeout=10m -coverprofile=coverage.out ./...
+      - name: Upload coverage
+        if: >-
+          matrix.go == '1.26.11' &&
+          (github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository)
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.out
+          flags: unittests
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.11"
+          cache: true
+      - name: Download dependencies
+        run: go mod download
+      - name: Vet
+        run: go vet ./...
+      - name: Check module tidiness
+        run: go mod tidy -diff
+      - name: Install actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+      - name: Validate workflows
+        run: actionlint -color
+      - name: Validate shell scripts
+        run: >-
+          find examples integration/cloud -name '*.sh' -print0 |
+          xargs -0 -n1 bash -n
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+      - name: Vulnerability report (non-blocking for Go 1.21 compatibility)
+        continue-on-error: true
+        run: govulncheck ./...
+
+  race:
+    name: race
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+          cache: true
+      - name: Download dependencies
+        run: go mod download
+      - name: Run race detector
+        run: >-
+          go test -race -count=1 -timeout=10m
+          ./circuitbreaker
+          ./internal/polaris
+          ./selector
+          ./loadbalance
+          ./registry

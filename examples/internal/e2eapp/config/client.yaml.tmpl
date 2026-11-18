@@ -1,0 +1,33 @@
+global:
+  namespace: __NAMESPACE__
+  env_name: e2e
+
+server:
+  service: []
+
+client:
+  network: tcp
+  protocol: trpc
+  namespace: __NAMESPACE__
+
+plugins:
+  selector:
+    polarismesh:
+      default: true
+      protocol: grpc
+      address_list: __POLARIS__:__POLARIS_GRPC_PORT__
+      persistDir: ./polaris-cache
+      message_timeout: 3s
+      discovery:
+        refresh_interval: 1000
+      circuitbreaker:
+        checkPeriod: 1s
+        requestCountAfterHalfOpen: 1
+        successCountAfterHalfOpen: 1
+        sleepWindow: 2s
+        errorCount:
+          continuousErrorThreshold: 1
+        errorRate:
+          errorRateThreshold: 0.9
+          metricStatTimeWindow: 1s
+          requestVolumeThreshold: 100

@@ -1,0 +1,22 @@
+global:
+  namespace: ${POLARIS_NAMESPACE}
+  env_name: helloworld
+
+server:
+  service: []
+
+client:
+  network: tcp
+  protocol: trpc
+  namespace: ${POLARIS_NAMESPACE}
+
+plugins:
+  selector:
+    polarismesh:
+      default: true
+      protocol: grpc
+      address_list: ${POLARIS_SERVER}:${POLARIS_GRPC_PORT}
+      persistDir: ${POLARIS_CACHE_DIR}
+      message_timeout: 3s
+      discovery:
+        refresh_interval: 1000

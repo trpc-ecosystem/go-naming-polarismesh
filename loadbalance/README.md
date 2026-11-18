@@ -1,3 +1,5 @@
+English | [中文](README.zh_CN.md)
+
 # Load Balancing Plugin
 
 Consistent hash or common hash load balancing method is used as follows:
@@ -34,4 +36,4 @@ func main() {
 }
 ```
 
-!`Consistent hash does not take effect `, please upgrade to the latest version of the plugin first.
+If consistent hash does not take effect, upgrade to the latest version of the plugin first.

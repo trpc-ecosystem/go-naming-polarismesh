@@ -1,0 +1,48 @@
+version: "2"
+
+run:
+  timeout: 30m
+  tests: true
+
+linters:
+  default: none
+  enable:
+    - bodyclose
+    - errcheck
+    - errorlint
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nolintlint
+    - staticcheck
+    - unused
+    - whitespace
+  exclusions:
+    paths:
+      - examples
+      - internal/mock
+  settings:
+    lll:
+      line-length: 480
+      tab-width: 4
+    misspell:
+      locale: US
+
+formatters:
+  enable:
+    - gci
+    - gofmt
+  exclusions:
+    paths:
+      - examples
+      - internal/mock
+  settings:
+    gci:
+      sections:
+        - standard
+        - prefix(trpc.group)
+        - default
+      custom-order: true
+    gofmt:
+      simplify: true

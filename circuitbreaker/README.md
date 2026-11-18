@@ -1,3 +1,5 @@
+English | [中文](README.zh_CN.md)
+
 # Circuit Breaker Plugin
 
 ```yaml
@@ -17,8 +19,8 @@ selector:
       successCountAfterHalfOpen: 8
       # Circuit breaking strategy, default as [errorCount, errorRate].
       chain:
-        - errorCount  # Circuit breaker based on error rate.
-        - errorRate   # Circuit breaker based on consecutive error count.
+        - errorCount  # Circuit breaker based on consecutive error count.
+        - errorRate   # Circuit breaker based on error rate.
       # Config for strategy errorCount.
       errorCount:
         # Threshold to trigger continuous error circuit breaker, default as 10.
@@ -38,3 +40,11 @@ selector:
         # The threshold of requests to trigger errorRate, default as 10.
         requestVolumeThreshold: 10
 ```
+
+Polaris SDK 1.7.x implements `errorCount` and `errorRate` with the `composite` plugin. The legacy
+chain names are accepted and normalized to `composite`. Because `composite` has one error-rate
+interval, `errorCount.metricStatTimeWindow` must be omitted or match
+`errorRate.metricStatTimeWindow`.
+Because `composite` always enables both default triggers, configure `errorCount` and `errorRate`
+together. A single legacy strategy is rejected during initialization instead of being silently
+changed into a dual-strategy breaker.

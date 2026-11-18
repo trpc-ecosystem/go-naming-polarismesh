@@ -15,6 +15,34 @@ package registry
 
 import "github.com/polarismesh/polaris-go/pkg/model"
 
+// Endpoint describes one Polaris instance registered by a tRPC service.
+type Endpoint struct {
+	// Address is the instance network address in host:port form.
+	Address string
+	// Protocol is the protocol of this instance endpoint.
+	Protocol string
+	// Version is the optional instance version.
+	Version string
+	// ServiceToken is the optional service access token.
+	ServiceToken string
+	// InstanceID is an optional stable instance ID.
+	InstanceID string
+	// Weight is the optional instance weight.
+	Weight *int
+	// TTL is the heartbeat TTL in seconds.
+	TTL int
+	// HeartBeat is the manual heartbeat interval in seconds.
+	HeartBeat int
+	// AutoHeartbeat enables adapter-managed heartbeat reporting.
+	AutoHeartbeat *bool
+	// DisableHealthCheck disables TTL registration and heartbeat reporting.
+	DisableHealthCheck *bool
+	// Metadata is endpoint-specific metadata and overrides service metadata.
+	Metadata map[string]string
+	// InstanceLocation is the geographic location of the instance.
+	InstanceLocation *model.Location
+}
+
 // Config is registry configuration.
 type Config struct {
 	// ServiceToken Service Access Token.
@@ -35,6 +63,10 @@ type Config struct {
 	Namespace string
 	// ServiceName Service Name.
 	ServiceName string
+	// Version is the optional service instance version.
+	Version string
+	// InstanceProtocol is the protocol of registered instances.
+	InstanceProtocol string
 	// BindAddress specifies reporting address.
 	BindAddress string
 	// PreferBindAddress gives the BindAddress higher priority over service TRPC's opts.Address when it is true.
@@ -43,6 +75,10 @@ type Config struct {
 	Metadata map[string]string
 	// DisableHealthCheck disables healthcheck.
 	DisableHealthCheck bool
+	// AutoHeartbeat enables adapter-managed heartbeat reporting.
+	AutoHeartbeat bool
 	// InstanceLocation is the geographic location of the instance.
 	InstanceLocation *model.Location
+	// Endpoints registers one Polaris instance per endpoint.
+	Endpoints []Endpoint
 }

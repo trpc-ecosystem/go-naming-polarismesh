@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Examples and real-service E2E
+    url: https://github.com/trpc-ecosystem/go-naming-polarismesh/blob/main/examples/README.md
+    about: Runnable examples, verification scripts and cloud deployment guidance

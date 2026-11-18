@@ -1,3 +1,5 @@
+English | [中文](README.zh_CN.md)
+
 # Route Selector Plugin
 
 An implementation of trpc-selector that provides trpc users with polaris mesh for routing and load balancing.

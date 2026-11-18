@@ -6,11 +6,50 @@ English | [中文](README.zh_CN.md)
 [![Go Report Card](https://goreportcard.com/badge/trpc.group/trpc-go/trpc-naming-polarismesh)](https://goreportcard.com/report/trpc.group/trpc-go/trpc-naming-polarismesh)
 [![LICENSE](https://img.shields.io/badge/license-Apache--2.0-green.svg)](https://github.com/trpc-ecosystem/go-naming-polarismesh/blob/main/LICENSE)
 [![Releases](https://img.shields.io/github/release/trpc-ecosystem/go-naming-polarismesh.svg?style=flat-square)](https://github.com/trpc-ecosystem/go-naming-polarismesh/releases)
-[![Tests](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/prc.yml/badge.svg)](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/prc.yml)
+[![Tests](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/testing.yml/badge.svg)](https://github.com/trpc-ecosystem/go-naming-polarismesh/actions/workflows/testing.yml)
 [![Coverage](https://codecov.io/gh/trpc-ecosystem/go-naming-polarismesh/branch/main/graph/badge.svg)](https://app.codecov.io/gh/trpc-ecosystem/go-naming-polarismesh/tree/main)
  
 This Plugin consists of Service Registry, Service Discovery, Load Balance and Circuit Breaker.
 You can integrate it to your project quickly by yaml config.
+
+The module language version is Go 1.21. Production builds should use
+Go 1.26.11 or a newer patched toolchain because Go 1.21 no longer receives
+standard-library security fixes. API and migration details are listed in
+[COMPATIBILITY.md](./COMPATIBILITY.md).
+
+Runnable Go examples are in [examples](./examples). Start with the
+[HelloWorld example](./examples/helloworld): it has a proto contract, generated
+tRPC stubs, a server, a client and separate Polaris YAML files. Its client shows
+both supported naming paths. The broader suite covers dynamic metadata, load
+balancing, circuit-breaker failover, metadata routing, multi-context
+isolation and multiple service endpoints. A Polaris address
+is always supplied at runtime.
+
+Every runnable example under `examples/` has a real Polaris `verify.sh` entry.
+Use `examples/verify_all.sh --polaris-server <host>` to run the full suite.
+Verification leaves processes and resources for inspection; use
+`examples/cleanup.sh` to stop processes and
+`examples/cleanup.sh --delete-service --polaris-server <host>` to remove remote
+services and rules.
+
+For remote deployment validation, build a Linux package with precompiled
+example binaries:
+
+```bash
+./integration/cloud/build-package.sh
+```
+
+After uploading, extracting and checking the package on the cloud host, run
+only the registry cases with:
+
+```bash
+./run-e2e.sh --server <polaris-host>:8091 --only registry
+```
+
+The cloud host does not need Go. Run records, per-scenario logs and a checksummed
+log archive are generated for transfer back to the local
+`integration/cloud/import-logs.sh` summarizer. See
+[integration/cloud/README.md](./integration/cloud/README.md).
 
 ## How to Use
 
@@ -30,7 +69,7 @@ import _ "trpc.group/trpc-go/trpc-naming-polarismesh"
 
 func main() {
     opts := []client.Option{
-    // namespce, use current env namespace on missing.
+    // namespace, use current env namespace on missing.
     client.WithNamespace("Development"),
     client.WithServiceName("trpc.app.server.service"),
     }
@@ -88,6 +127,45 @@ func main() {
 
 [link](./registry)
 
+### Dynamic Registry Metadata
+
+Use `registry.RegisterMetadataProvider` for metadata produced at runtime. Use
+`RegistrationSnapshotProviderFunc` when metadata, host, instance version, port
+and protocol must come from one atomic snapshot. Metadata is opaque to this
+plugin; protocol-specific validation belongs to the application or extension.
+
+```go
+import polarisregistry "trpc.group/trpc-go/trpc-naming-polarismesh/registry"
+
+s := trpc.NewServer()
+provider := polarisregistry.RegistrationSnapshotProviderFunc(func() (
+    polarisregistry.RegistrationSnapshot, error,
+) {
+    return polarisregistry.RegistrationSnapshot{
+        Metadata: map[string]string{
+            "deployment": "green",
+            "descriptor": `{"revision":"v1.2.3"}`,
+        },
+        Host:             "10.0.0.10",
+        Version:          "v1.2.3",
+        RegistrationPort: 9000,
+        Protocol:         "",
+        SetProtocol:      true,
+    }, nil
+})
+if err := polarisregistry.RegisterMetadataProvider("trpc.app.server.Service", provider); err != nil {
+    return err
+}
+defer polarisregistry.UnregisterMetadataProvider("trpc.app.server.Service")
+if err := s.Serve(); err != nil {
+    return err
+}
+```
+
+Register the provider before `Serve`. For adapters that need the same Polaris client, call
+`FromFramework(service)` and reuse `Registry.SDKContext()` instead of creating another SDK context.
+See [registry/README.md](./registry/README.md) for merge rules and lifecycle details.
+
 ### Load Balance
 
 [link](./loadbalance)
@@ -128,6 +206,7 @@ plugins:  # Plugin configurations.
       # service:  # Services to be registered.
       #   - name: trpc.server.Service1  # Service name, should keep consistent with service in server config in trpc_go.yaml.
       #     namespace: Development  # The namespace this service belongs to.
+      #     version: v1.2.3  # Optional instance version.
       #     # (Optional) Used to heartbeat or unregister.
       #     # When register_self is true, this config has no effect, the plugin will use returned instance_id of register to overwrite config.
       #     # if register_self is false, instance_id cannot be missing.
@@ -195,6 +274,12 @@ plugins:  # Plugin configurations.
       #     metricNumBuckets: 5  # The zie of buckets to stat error rate.
       #     metricStatTimeWindow: 1m0s  # The statistic period for error rate, default as 1min.
       #     requestVolumeThreshold: 10  # The threshold to trigger error rate circuit breaker, default as 10.
+      #     Polaris SDK 1.7.x implements both strategies with the composite plugin.
+      #     Legacy errorCount/errorRate chain names are accepted and normalized to composite.
+#     Configure both names together; a single legacy strategy is rejected because composite
+#     always enables both default triggers.
+      #     The composite plugin has one error-rate interval, so errorCount.metricStatTimeWindow
+      #     must be omitted or equal to errorRate.metricStatTimeWindow.
       # service_router:
       #   nearby_matchlevel: zone  # The level of nearby match router, one of region, zone or campus, default as zone.
       #   # The minimum threshold of healthy instances to trigger ALL DIE IS ALIVE.
@@ -518,7 +603,7 @@ which result in the difference of `WithServiceName` and `WithTarget`:
 | use original metadata to route(except 'env' and 'set')  |           <font color="green">Y</font>           |        <font color="green">Y</font>         |            <font color="red">N</font>             |          <font color="red">N</font>          |
 | use target metadata to route(except 'env' and 'set')    |            <font color="red">N</font>            |        <font color="green">Y</font>         |            <font color="red">N</font>             |         <font color="green">Y</font>         |
 | use `client.WithEnvKey` to set original metadata['key'] |           <font color="green">Y</font>           |         <font color="red">N</font>          |            <font color="red">N</font>             |          <font color="red">N</font>          |
-| use `client.WithEnvTransfer` to reoute                  |           <font color="green">Y</font>           |         <font color="red">N</font>          |            <font color="red">N</font>             |          <font color="red">N</font>          |
+| use `client.WithEnvTransfer` to reroute                 |           <font color="green">Y</font>           |         <font color="red">N</font>          |            <font color="red">N</font>             |          <font color="red">N</font>          |
 | canary router                                           |           <font color="green">Y</font>           |        <font color="green">Y</font>         |           <font color="green">Y</font>            |         <font color="green">Y</font>         |
 | set router                                              |           <font color="green">Y</font>           |         <font color="red">N</font>          |           <font color="green">Y</font>            |          <font color="red">N</font>          |
 

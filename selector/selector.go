@@ -15,6 +15,7 @@
 package selector
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strconv"
@@ -23,15 +24,19 @@ import (
 	"time"
 
 	"trpc.group/trpc-go/trpc-go/codec"
+	thttp "trpc.group/trpc-go/trpc-go/http"
 	"trpc.group/trpc-go/trpc-go/log"
 	"trpc.group/trpc-go/trpc-go/naming/registry"
 	"trpc.group/trpc-go/trpc-go/naming/selector"
 	"trpc.group/trpc-go/trpc-naming-polarismesh/circuitbreaker"
+	"trpc.group/trpc-go/trpc-naming-polarismesh/internal/polaris"
 	"trpc.group/trpc-go/trpc-naming-polarismesh/servicerouter"
 
 	"github.com/polarismesh/polaris-go/api"
 	"github.com/polarismesh/polaris-go/pkg/config"
 	"github.com/polarismesh/polaris-go/pkg/model"
+	"github.com/polarismesh/polaris-go/pkg/plugin/common"
+	"github.com/polarismesh/polaris-go/pkg/plugin/loadbalancer"
 )
 
 const (
@@ -168,6 +173,64 @@ func extractSourceServiceRequestInfo(opts *selector.Options, enableTransMeta boo
 	return nil
 }
 
+func extractCallerServiceRequestInfo(opts *selector.Options) *model.ServiceKey {
+	if opts.SourceNamespace == "" && opts.SourceServiceName == "" {
+		return model.EmptyServiceKey
+	}
+	return &model.ServiceKey{
+		Namespace: opts.SourceNamespace,
+		Service:   opts.SourceServiceName,
+	}
+}
+
+func requestMethodPath(opts *selector.Options) string {
+	if opts.Ctx == nil {
+		return ""
+	}
+	msg := codec.Message(opts.Ctx)
+	if isHTTPRequest(opts) {
+		if path := msg.CalleeMethod(); path != "" {
+			return path
+		}
+	}
+	if path := msg.ClientRPCName(); path != "" {
+		return path
+	}
+	return msg.CalleeMethod()
+}
+
+func requestHTTPMethod(opts *selector.Options) string {
+	if opts.Ctx == nil {
+		return ""
+	}
+	msg := codec.Message(opts.Ctx)
+	switch msg.ClientReqHead().(type) {
+	case *thttp.ClientReqHeader:
+		return requestHTTPMethodFromMessage(msg)
+	}
+	return ""
+}
+
+func requestHTTPMethodFromMessage(msg codec.Msg) string {
+	if header, ok := msg.ClientReqHead().(*thttp.ClientReqHeader); ok {
+		return header.Method
+	}
+	return ""
+}
+
+func isHTTPRequest(opts *selector.Options) bool {
+	if opts.Ctx == nil {
+		return false
+	}
+	_, ok := codec.Message(opts.Ctx).ClientReqHead().(*thttp.ClientReqHeader)
+	return ok
+}
+
+func isInstanceNotFound(err error) bool {
+	var sdkErr model.SDKError
+	return errors.As(err, &sdkErr) && sdkErr.ErrorCode() == model.ErrCodeAPIInstanceNotFound
+}
+
 func getDestMetadata(opts *selector.Options) map[string]string {
 	destMeta := make(map[string]string)
 	// Support environment selection when service routing is not enabled.
@@ -199,6 +262,7 @@ func (s *Selector) Select(serviceName string, opt ...selector.Option) (*registry
 	if s.cfg.Enable {
 		sourceService = extractSourceServiceRequestInfo(opts, s.cfg.EnableTransMeta)
 	}
+	callerService := extractCallerServiceRequestInfo(opts)
 	if opts.LoadBalanceType == "" {
 		opts.LoadBalanceType = LoadBalanceWR
 	}
@@ -212,6 +276,7 @@ func (s *Selector) Select(serviceName string, opt ...selector.Option) (*registry
 	if opts.Key != "" {
 		hashKey = []byte(opts.Key)
 	}
+	canary := getCanaryValue(opts)
 	resp, err := s.consumer.GetOneInstance(&api.GetOneInstanceRequest{
 		GetOneInstanceRequest: model.GetOneInstanceRequest{
 			Service:        serviceName,
@@ -220,17 +285,84 @@ func (s *Selector) Select(serviceName string, opt ...selector.Option) (*registry
 			Metadata:       destMeta,
 			LbPolicy:       name,
 			ReplicateCount: opts.Replicas,
-			Canary:         getCanaryValue(opts),
+			Canary:         canary,
 			HashKey:        hashKey,
 		},
 	})
-	if err != nil {
+	var (
+		inst      model.Instance
+		allowOpen bool
+	)
+	switch {
+	case err != nil && isInstanceNotFound(err), err == nil && (resp == nil || len(resp.Instances) == 0):
+		inst, allowOpen, err = s.selectInstanceCandidate(name, serviceName, namespace, sourceService,
+			destMeta, canary, hashKey, opts.Replicas)
+		if err != nil {
+			return nil, fmt.Errorf("select instance candidate err: %w", err)
+		}
+	case err != nil:
 		return nil, fmt.Errorf("get one instance err: %s", err.Error())
+	default:
+		inst = resp.Instances[0]
+		allowOpen = resp.Cluster != nil && resp.Cluster.HasLimitedInstances
 	}
-	if len(resp.Instances) == 0 {
-		return nil, fmt.Errorf("get one instance return empty")
+
+	serviceResource, err := polaris.InstanceServiceResource(inst, callerService)
+	if err != nil {
+		return nil, fmt.Errorf("build service circuit breaker resource err: %w", err)
 	}
-	inst := resp.Instances[0]
+	methodResource, err := polaris.MethodResource(
+		serviceResource.GetService(), callerService, inst.GetProtocol(),
+		requestHTTPMethod(opts), requestMethodPath(opts))
+	if err != nil {
+		return nil, fmt.Errorf("build method circuit breaker resource err: %w", err)
+	}
+	instanceAvailable, err := polaris.InstancePermissionAvailable(
+		s.consumer.SDKContext(), inst, allowOpen, callerService)
+	if err != nil {
+		return nil, fmt.Errorf("check instance circuit breaker err: %w", err)
+	}
+	if !instanceAvailable {
+		inst, allowOpen, err = s.selectAvailableInstance(name, serviceName, namespace, sourceService,
+			callerService, destMeta, canary, hashKey, opts.Replicas, inst)
+		if err != nil {
+			return nil, fmt.Errorf("select available instance err: %w", err)
+		}
+		fallbackMethodResource, err := polaris.MethodResource(
+			serviceResource.GetService(), callerService, inst.GetProtocol(),
+			requestHTTPMethod(opts), requestMethodPath(opts))
+		if err != nil {
+			return nil, fmt.Errorf("build fallback method circuit breaker resource err: %w", err)
+		}
+		methodResource = fallbackMethodResource
+	}
+	instanceResource, err := polaris.InstanceResource(inst, callerService)
+	if err != nil {
+		return nil, fmt.Errorf("build instance circuit breaker resource err: %w", err)
+	}
+	resources := []model.Resource{serviceResource}
+	if methodResource != nil {
+		resources = append(resources, methodResource)
+	}
+	if !polaris.IsRecoverAllOpenInstance(inst, allowOpen) {
+		resources = append(resources, instanceResource)
+	}
+	permission, err := polaris.AcquireResourcePermissions(s.consumer.SDKContext(), resources...)
+	if err != nil {
+		return nil, fmt.Errorf("check circuit breaker err: %w", err)
+	}
+	if !permission.Pass {
+		switch resource := permission.Resource.(type) {
+		case *model.MethodResource:
+			return nil, fmt.Errorf("method %s denied by circuit breaker", resource.Path)
+		case *model.InstanceResource:
+			return nil, fmt.Errorf(
+				"instance %s:%d denied by circuit breaker",
+				resource.GetNode().Host, resource.GetNode().Port)
+		default:
+			return nil, fmt.Errorf("service %s/%s denied by circuit breaker", namespace, serviceName)
+		}
+	}
 	var setName, containerName string
 	if inst.GetMetadata() != nil {
 		containerName = inst.GetMetadata()[containerKey]
@@ -245,11 +377,124 @@ func (s *Selector) Select(serviceName string, opt ...selector.Option) (*registry
 		ServiceName:   serviceName,
 		Weight:        inst.GetWeight(),
 		Metadata: map[string]interface{}{
-			"instance":  inst,
-			"service":   serviceName,
-			"namespace": namespace,
+			"instance":                        inst,
+			"service":                         serviceName,
+			"namespace":                       namespace,
+			polaris.SourceServiceMetadataKey:  sourceService,
+			polaris.CallerServiceMetadataKey:  callerService,
+			polaris.MethodResourceMetadataKey: methodResource,
+			polaris.AllowOpenMetadataKey:      allowOpen,
 		},
 	}, nil
+}
+
+func (s *Selector) selectAvailableInstance(
+	lbName string,
+	serviceName string,
+	namespace string,
+	sourceService *model.ServiceInfo,
+	caller *model.ServiceKey,
+	metadata map[string]string,
+	canary string,
+	hashKey []byte,
+	replicateCount int,
+	excluded model.Instance,
+) (model.Instance, bool, error) {
+	resp, err := s.consumer.GetInstances(&api.GetInstancesRequest{
+		GetInstancesRequest: model.GetInstancesRequest{
+			Service:       serviceName,
+			Namespace:     namespace,
+			SourceService: sourceService,
+			Metadata:      metadata,
+			Canary:        canary,
+		},
+	})
+	if err != nil {
+		return nil, false, err
+	}
+	if resp == nil || resp.Cluster == nil {
+		return nil, false, fmt.Errorf("get instances return empty cluster")
+	}
+	allowOpen := resp.Cluster.HasLimitedInstances
+
+	sdkCtx := s.consumer.SDKContext()
+	plugin, err := sdkCtx.GetPlugins().GetPlugin(common.TypeLoadBalancer, lbName)
+	if err != nil {
+		return nil, false, err
+	}
+	lb, ok := plugin.(loadbalancer.LoadBalancer)
+	if !ok {
+		return nil, false, fmt.Errorf("plugin %s is not a load balancer", lbName)
+	}
+	if proxy, ok := lb.(*loadbalancer.Proxy); ok {
+		lb = proxy.LoadBalancer
+	}
+
+	criteria := &loadbalancer.Criteria{
+		HashKey: hashKey,
+		ReplicateInfo: loadbalancer.ReplicateInfo{
+			Count: replicateCount,
+		},
+	}
+	inst, err := polaris.ChoosePermittedInstance(
+		sdkCtx, lb, resp.Cluster, resp, *criteria, caller, excluded)
+	if err != nil {
+		return nil, false, err
+	}
+	return inst, allowOpen, nil
+}
+
+func (s *Selector) selectInstanceCandidate(
+	lbName string,
+	serviceName string,
+	namespace string,
+	sourceService *model.ServiceInfo,
+	metadata map[string]string,
+	canary string,
+	hashKey []byte,
+	replicateCount int,
+) (model.Instance, bool, error) {
+	resp, err := s.consumer.GetInstances(&api.GetInstancesRequest{
+		GetInstancesRequest: model.GetInstancesRequest{
+			Service:       serviceName,
+			Namespace:     namespace,
+			SourceService: sourceService,
+			Metadata:      metadata,
+			Canary:        canary,
+		},
+	})
+	if err != nil {
+		return nil, false, err
+	}
+	if resp == nil || resp.Cluster == nil {
+		return nil, false, fmt.Errorf("get instances return empty cluster")
+	}
+	allowOpen := resp.Cluster.HasLimitedInstances
+
+	sdkCtx := s.consumer.SDKContext()
+	plugin, err := sdkCtx.GetPlugins().GetPlugin(common.TypeLoadBalancer, lbName)
+	if err != nil {
+		return nil, false, err
+	}
+	lb, ok := plugin.(loadbalancer.LoadBalancer)
+	if !ok {
+		return nil, false, fmt.Errorf("plugin %s is not a load balancer", lbName)
+	}
+	if proxy, ok := lb.(*loadbalancer.Proxy); ok {
+		lb = proxy.LoadBalancer
+	}
+
+	criteria := &loadbalancer.Criteria{
+		HashKey: hashKey,
+		ReplicateInfo: loadbalancer.ReplicateInfo{
+			Count: replicateCount,
+		},
+	}
+	inst, err := polaris.ChooseInstanceCandidate(sdkCtx, lb, resp.Cluster, resp, *criteria)
+	if err != nil {
+		return nil, false, err
+	}
+	return inst, allowOpen, nil
 }
 
 // GetConsumer gets the consumerAPI instance of the selector.

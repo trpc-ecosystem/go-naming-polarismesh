@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package trpc.examples.helloworld;
+
+option go_package = "trpc.group/trpc-go/trpc-naming-polarismesh/examples/helloworld/proto;helloworld";
+
+service Greeter {
+  rpc Hello (HelloRequest) returns (HelloReply) {}
+  rpc Hi (HelloRequest) returns (HelloReply) {}
+}
+
+message HelloRequest {
+  string msg = 1;
+}
+
+message HelloReply {
+  string msg = 1;
+}

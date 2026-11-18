@@ -13,6 +13,8 @@ We look forward to working with you to make this project better together!
 
 The project welcomes code patches, but to make sure things are well coordinated you should discuss any significant change before starting the work.
 It's recommended that you signal your intention to contribute in the issue tracker, either by claiming an [existing one](https://github.com/trpc-ecosystem/go-naming-polarismesh/issues) or by [opening a new issue](https://github.com/trpc-ecosystem/go-naming-polarismesh/issues/new).
+The module language version is Go 1.21. Use Go 1.26.11 or a newer patched
+toolchain for production builds and release artifacts.
 
 ### Checking the issue tracker
 

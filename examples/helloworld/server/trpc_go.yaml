@@ -1,0 +1,30 @@
+global:
+  namespace: ${POLARIS_NAMESPACE}
+  env_name: helloworld
+
+server:
+  app: examples
+  server: helloworld
+  service:
+    - name: ${POLARIS_SERVICE}
+      ip: ${HELLOWORLD_HOST}
+      port: ${HELLOWORLD_PORT}
+      network: tcp
+      protocol: trpc
+      registry: polarismesh
+      timeout: 3000
+
+plugins:
+  registry:
+    polarismesh:
+      register_self: true
+      heartbeat_interval: 3000
+      protocol: grpc
+      address_list: ${POLARIS_SERVER}:${POLARIS_GRPC_PORT}
+      service:
+        - name: ${POLARIS_SERVICE}
+          namespace: ${POLARIS_NAMESPACE}
+          version: ${POLARIS_VERSION}
+          weight: 100
+          metadata:
+            example: helloworld

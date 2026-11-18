@@ -1,0 +1,49 @@
+global:
+  namespace: ${POLARIS_NAMESPACE}
+  env_name: registry-transports
+
+server:
+  app: examples
+  server: registry-transports
+  service:
+    - name: ${POLARIS_SERVICE}
+      ip: ${PROVIDER_HOST}
+      port: ${TRPC_PORT}
+      network: tcp
+      protocol: trpc
+      registry: polarismesh
+      timeout: 3000
+
+plugins:
+  registry:
+    polarismesh:
+      register_self: true
+      heartbeat_interval: 2000
+      protocol: grpc
+      address_list: ${POLARIS_SERVER}:${POLARIS_GRPC_PORT}
+      service:
+        - name: ${POLARIS_SERVICE}
+          namespace: ${POLARIS_NAMESPACE}
+          instance_protocol: trpc
+          metadata:
+            example: registry-transports
+          endpoints:
+            - address: ${PROVIDER_HOST}:${TRPC_PORT}
+              protocol: trpc
+              version: ${VERSION_A}
+              weight: ${WEIGHT_A}
+              ttl: 6
+              heartbeat_interval: 2000
+              instance_id: ${INSTANCE_A}
+              metadata:
+                transport: trpc
+            - address: ${PROVIDER_HOST}:${HTTP_PORT}
+              protocol: http
+              version: ${VERSION_B}
+              weight: ${WEIGHT_B}
+              ttl: 6
+              heartbeat_interval: 2000
+              instance_id: ${INSTANCE_B}
+              auto_heartbeat: true
+              metadata:
+                transport: http
