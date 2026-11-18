@@ -18,7 +18,7 @@ helloworld/
 
 ## 前置条件
 
-- Go 1.18 或更高版本。
+- Go 1.21 或更高版本。
 - 可访问的 Polaris 服务端，gRPC 端口为 `8091`。
 - 已创建 `go-naming-polarismesh-e2e` namespace，或通过 `-namespace` 指定其他值。
 

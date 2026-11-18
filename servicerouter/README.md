@@ -5,10 +5,11 @@ English | [中文](README.zh_CN.md)
 ## Canary function
 
 - Enable configure
-```
-selector:  # Configuration for trpc framework service discovery.
-  polaris:  # Polaris service discovery configuration.
-    enable_canary: true  # Enable the canary function, the default false is not enabled.
+```yaml
+plugins:
+  selector:
+    polarismesh:  # Polaris service discovery configuration.
+      enable_canary: true  # Enable canary routing. Disabled by default.
 ```
 
 - Use the demo

@@ -68,13 +68,10 @@ Commit messages in go-naming-polarismesh follow a specific set of conventions, w
 Here is an example of a good one:
 
 
-> math: improve Sin, Cos and Tan precision for very large arguments
+> polarismesh: preserve instance identity after retry
 >
-> The existing implementation has poor numerical properties for
-> large arguments, so use the McGillicutty algorithm to improve
-> accuracy above 1e10.
->
-> The algorithm is described at https://wikipedia.org/wiki/McGillicutty_Algorithm
+> Reuse the configured stable instance ID after an ambiguous registration
+> failure so cleanup targets the same instance.
 >
 > Fixes #159
 

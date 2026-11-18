@@ -14,8 +14,9 @@ examples. Detailed case lists are available in:
 - The Polaris gRPC port is reachable, default `8091`.
 - `curl` and `jq` are installed.
 - No provider or control client from a previous run is still running.
-- The example service and routing rule are clean. Run cleanup with
-  `--delete-service` after an interrupted run before retrying.
+- The example service has no stale instances. Run cleanup with
+  `--delete-service` after an interrupted run before retrying. An existing
+  same-name routing rule is reused and enabled by the verifier.
 
 The examples use namespace `go-naming-polarismesh-e2e`. The Polaris address is
 provided at runtime.
@@ -61,7 +62,7 @@ processes and remove local artifacts:
 ./examples/route/rule/cleanup.sh
 ```
 
-Delete the remote service and routing rule:
+Delete the remote service. The routing rule is retained:
 
 ```bash
 ./examples/route/metadata/cleanup.sh \

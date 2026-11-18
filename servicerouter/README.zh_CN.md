@@ -7,9 +7,10 @@
 - 启用配置
 
 ```yaml
-selector:  # tRPC 框架服务发现配置。
-  polaris:  # 北极星服务发现配置。
-    enable_canary: true  # 启用灰度能力，默认 false，即不启用。
+plugins:
+  selector:
+    polarismesh:  # 北极星服务发现配置。
+      enable_canary: true  # 启用灰度能力，默认 false，即不启用。
 ```
 
 - 使用示例

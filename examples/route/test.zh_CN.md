@@ -13,8 +13,9 @@
 - Polaris gRPC 端口可访问，默认 `8091`。
 - 已安装 `curl` 和 `jq`。
 - 上次运行启动的 Provider 和 control client 进程已经停止。
-- 示例 service 和路由规则没有残留。异常中断后先执行带
-  `--delete-service` 的 cleanup，再重新验证。
+- 示例 service 没有残留实例。异常中断后先执行带
+  `--delete-service` 的 cleanup，再重新验证。已存在的同名路由规则会由
+  verify 脚本复用并启用。
 
 示例统一使用命名空间 `go-naming-polarismesh-e2e`。Polaris 地址在运行时通过
 参数传入。
@@ -59,7 +60,7 @@
 ./examples/route/rule/cleanup.sh
 ```
 
-删除远端服务和路由规则：
+删除远端服务，并保留路由规则：
 
 ```bash
 ./examples/route/metadata/cleanup.sh \

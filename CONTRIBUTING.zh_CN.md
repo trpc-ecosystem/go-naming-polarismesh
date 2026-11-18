@@ -64,11 +64,10 @@ issue 会被分类以管理工作流程。
 go-naming-polarismesh 中的提交消息遵循一套特定的约定，我们将在本节中讨论。
 
 以下是一个良好的示例：
-> math: improve Sin, Cos and Tan precision for very large arguments
+> polarismesh: preserve instance identity after retry
 >
-> The existing implementation has poor numerical properties for large arguments, so use the McGillicutty algorithm to improve accuracy above 1e10.
->
-> The algorithm is described at https://wikipedia.org/wiki/McGillicutty_Algorithm
+> Reuse the configured stable instance ID after an ambiguous registration
+> failure so cleanup targets the same instance.
 >
 > Fixes #159
 
