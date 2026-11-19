@@ -6,7 +6,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.4
 	github.com/polarismesh/polaris-go v1.7.3-0.20261118123913-42e3c3da4435
-	github.com/polarismesh/specification v1.9.0-RC1
+	github.com/polarismesh/specification v1.9.0-alpha.1
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/grpc v1.67.0
 	google.golang.org/protobuf v1.36.5

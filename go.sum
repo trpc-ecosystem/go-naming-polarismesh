@@ -80,8 +80,8 @@ github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/polarismesh/polaris-go v1.7.3-0.20261118123913-42e3c3da4435 h1:XBCTwm25Vs1xYnAn2TORaT/BU/LW33CPaceTpqgp74s=
 github.com/polarismesh/polaris-go v1.7.3-0.20261118123913-42e3c3da4435/go.mod h1:rVg68XqVAAHl54sQaYq813mSbahLSgUcaMC639hwdNs=
-github.com/polarismesh/specification v1.9.0-RC1 h1:N2vJpIgINUlYKdk3Qis3w1Mi+aXkdlUyyJaS+gcl5MU=
-github.com/polarismesh/specification v1.9.0-RC1/go.mod h1:Gb9OLXOELG4VwhxPh4DK6C0C3Z7FFYCmVkTW/d6+kvM=
+github.com/polarismesh/specification v1.9.0-alpha.1 h1:pxORq2d70h3/C3WoQ09KQxjBW7F7KJAl/9Nuc+N1aMg=
+github.com/polarismesh/specification v1.9.0-alpha.1/go.mod h1:Gb9OLXOELG4VwhxPh4DK6C0C3Z7FFYCmVkTW/d6+kvM=
 github.com/prometheus/client_golang v1.17.0 h1:rl2sfwZMtSthVU752MqfjQozy7blglC+1SOtjMAMh+Q=
 github.com/prometheus/client_golang v1.17.0/go.mod h1:VeL+gMmOAxkS2IqfCq0ZmHSL+LjWfWDUmp1mBz9JgUY=
 github.com/prometheus/client_model v0.4.1-0.20230718164431-9a2bf3000d16 h1:v7DLqVdK4VrYkVD5diGdl4sxJurKJEMnODWRJlxV9oM=
