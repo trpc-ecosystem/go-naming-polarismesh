@@ -2,17 +2,9 @@
 
 # 服务路由
 
-## 灰度能力
+## 规则路由
 
-- 启用配置
-
-```yaml
-selector:  # tRPC 框架服务发现配置。
-  polaris:  # 北极星服务发现配置。
-    enable_canary: true  # 启用灰度能力，默认 false，即不启用。
-```
-
-- 使用示例
+开启 `enable_servicerouter: true` 后即可使用规则路由。调用方身份来自 `client.WithCallerServiceName`，Polaris 会根据 v2 路由规则匹配主调服务，并选择目标实例标签。
 
 ```go
 package main
@@ -24,7 +16,6 @@ import (
     "trpc.group/trpc-go/trpc-go/client"
     "trpc.group/trpc-go/trpc-go/log"
     "trpc.group/trpc-go/trpc-go/naming/registry"
-    "trpc.group/trpc-go/trpc-naming-polarismesh/servicerouter"
 
     pb "trpc.group/trpcprotocol/test/helloworld"
 )
@@ -35,10 +26,11 @@ func main() {
 
     node := &registry.Node{}
     opts := []client.Option{
-        client.WithServiceName("your service"),
+        client.WithServiceName("trpc.app.server.service"),
         client.WithNamespace("Production"),
+        client.WithCallerNamespace("Production"),
+        client.WithCallerServiceName("trpc.app.client.service"),
         client.WithSelectorNode(node),
-        servicerouter.WithCanary("1"),
     }
 
     proxy := pb.NewGreeterClientProxy()
@@ -50,3 +42,5 @@ func main() {
     log.Debugf("req:%s, rsp:%s, err:%v, node: %+v", req, rsp, err, node)
 }
 ```
+
+可运行示例见 [examples/route/rule](../examples/route/rule)。

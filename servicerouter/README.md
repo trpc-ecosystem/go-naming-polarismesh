@@ -2,16 +2,10 @@ English | [中文](README.zh_CN.md)
 
 # Service routing
 
-## Canary function
+## Rule-based routing
 
-- Enable configure
-```
-selector:  # Configuration for trpc framework service discovery.
-  polaris:  # Polaris service discovery configuration.
-    enable_canary: true  # Enable the canary function, the default false is not enabled.
-```
+Rule-based routing is enabled with `enable_servicerouter: true`. The caller identity comes from `client.WithCallerServiceName`; Polaris matches it against a v2 routing rule and selects the destination label.
 
-- Use the demo
 ```go
 package main
 
@@ -22,7 +16,6 @@ import (
     "trpc.group/trpc-go/trpc-go/client"
     "trpc.group/trpc-go/trpc-go/log"
     "trpc.group/trpc-go/trpc-go/naming/registry"
-    "trpc.group/trpc-go/trpc-naming-polarismesh/servicerouter"
 
     pb "trpc.group/trpcprotocol/test/helloworld"
 )
@@ -33,10 +26,11 @@ func main() {
 
     node := &registry.Node{}
     opts := []client.Option{
-        client.WithServiceName("your service"),
+        client.WithServiceName("trpc.app.server.service"),
         client.WithNamespace("Production"),
+        client.WithCallerNamespace("Production"),
+        client.WithCallerServiceName("trpc.app.client.service"),
         client.WithSelectorNode(node),
-        servicerouter.WithCanary("1"),
     }
 
     proxy := pb.NewGreeterClientProxy()
@@ -48,3 +42,5 @@ func main() {
     log.Debugf("req:%s, rsp:%s, err:%v, node: %+v", req, rsp, err, node)
 }
 ```
+
+See [examples/route/rule](../examples/route/rule) for a runnable RuleBased example.

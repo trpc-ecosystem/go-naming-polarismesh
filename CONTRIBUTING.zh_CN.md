@@ -54,7 +54,9 @@ issue 会被分类以管理工作流程。
 
 - 确保您的代码符合项目的代码规范。
   这包括但不限于代码风格、注释规范等。这有助于我们维护项目的整洁性和一致性。
-- 在提交 PR 之前，请确保您已在本地测试过您的代码。 确保代码没有明显的错误并且可以正常运行。
+- 提交 PR 前请运行 `go mod tidy`、`go build ./...`、`go test ./...` 和
+  `go vet ./...`。涉及并发、取消或生命周期变更时，请运行
+  `go test -race -count=1 ./...`。无法执行的检查需要在 PR 中说明。
 - 要使用新代码更新拉取请求，只需将其推送到分支； 您可以添加更多提交，也可以 rebase 并 force-push（两种风格都可以接受）。
 - 如果请求被接受，所有提交将被压缩，最终提交描述将由 PR 的标题和描述组成。
   单个提交的描述将被丢弃。 请参阅以下“编写良好的提交消息”以获取一些建议。
@@ -64,11 +66,10 @@ issue 会被分类以管理工作流程。
 go-naming-polarismesh 中的提交消息遵循一套特定的约定，我们将在本节中讨论。
 
 以下是一个良好的示例：
-> math: improve Sin, Cos and Tan precision for very large arguments
+> polarismesh: preserve instance identity after retry
 >
-> The existing implementation has poor numerical properties for large arguments, so use the McGillicutty algorithm to improve accuracy above 1e10.
->
-> The algorithm is described at https://wikipedia.org/wiki/McGillicutty_Algorithm
+> Reuse the configured stable instance ID after an ambiguous registration
+> failure so cleanup targets the same instance.
 >
 > Fixes #159
 
