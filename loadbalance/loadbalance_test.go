@@ -284,6 +284,7 @@ func TestSelectDoesNotLeakServiceQuotaWhenMethodIsOpen(t *testing.T) {
 
 	msg := trpc.Message(context.Background())
 	msg.WithClientRPCName("/review.Service/Call")
+	msg.WithCalleeMethod("/review.Service/Call")
 	msg.WithClientReqHead(&thttp.ClientReqHeader{Method: "GET"})
 	requestCtx := context.WithValue(context.Background(), codec.ContextKeyMessage, msg)
 	_, err = lb.Select(svcKey.Service, []*registry.Node{{
@@ -357,6 +358,7 @@ func TestLoadBalanceAppliesAllHalfOpenResourceQuotas(t *testing.T) {
 
 			msg := trpc.Message(context.Background())
 			msg.WithClientRPCName("/review.Service/Call")
+			msg.WithCalleeMethod("/review.Service/Call")
 			msg.WithClientReqHead(&thttp.ClientReqHeader{Method: "GET"})
 			requestCtx := context.WithValue(context.Background(), codec.ContextKeyMessage, msg)
 			_, err = lb.Select(svcKey.Service, []*registry.Node{{

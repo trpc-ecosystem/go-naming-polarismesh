@@ -358,6 +358,7 @@ func TestSelectDoesNotLeakServiceQuotaWhenMethodIsOpen(t *testing.T) {
 
 	msg := trpc.Message(context.Background())
 	msg.WithClientRPCName("/review.Service/Call")
+	msg.WithCalleeMethod("/review.Service/Call")
 	msg.WithClientReqHead(&thttp.ClientReqHeader{Method: "GET"})
 	requestCtx := context.WithValue(context.Background(), codec.ContextKeyMessage, msg)
 	s := &Selector{consumer: consumer, cfg: &Config{}}
@@ -437,6 +438,7 @@ func TestSelectDoesNotLeakServiceQuotaWhenFallbackMethodIsOpen(t *testing.T) {
 
 	msg := trpc.Message(context.Background())
 	msg.WithClientRPCName("/review.Service/Call")
+	msg.WithCalleeMethod("/review.Service/Call")
 	msg.WithClientReqHead(&thttp.ClientReqHeader{Method: "GET"})
 	requestCtx := context.WithValue(context.Background(), codec.ContextKeyMessage, msg)
 	s := &Selector{consumer: consumer, cfg: &Config{}}
@@ -504,6 +506,7 @@ func TestSelectAppliesAllHalfOpenResourceQuotas(t *testing.T) {
 
 			msg := trpc.Message(context.Background())
 			msg.WithClientRPCName("/review.Service/Call")
+			msg.WithCalleeMethod("/review.Service/Call")
 			msg.WithClientReqHead(&thttp.ClientReqHeader{Method: "GET"})
 			requestCtx := context.WithValue(context.Background(), codec.ContextKeyMessage, msg)
 			s := &Selector{consumer: consumer, cfg: &Config{}}
