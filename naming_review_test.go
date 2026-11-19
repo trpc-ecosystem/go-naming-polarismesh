@@ -419,6 +419,7 @@ func TestReviewMethodRuleUsesRequestPath(t *testing.T) {
 
 	msgCtx := trpc.Message(context.Background())
 	msgCtx.WithClientRPCName("/review.Service/Call")
+	msgCtx.WithCalleeMethod("/review.Service/Call")
 	msgCtx.WithClientReqHead(&thttp.ClientReqHeader{Method: "GET"})
 	requestCtx := context.WithValue(context.Background(), codec.ContextKeyMessage, msgCtx)
 	node, err := selector.Select("review-service",

@@ -19,7 +19,7 @@ helloworld/
 
 ## Prerequisites
 
-- Go 1.18 or newer.
+- Go 1.21 or newer.
 - A reachable Polaris server with gRPC port `8091`.
 - A namespace named `go-naming-polarismesh-e2e`, or override `-namespace`.
 

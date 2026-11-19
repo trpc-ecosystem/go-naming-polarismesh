@@ -15,7 +15,7 @@ SERVICE_NAME="trpc.polaris.e2e.RouteRule"
 CALLER_SERVICE="trpc.polaris.e2e.RouteRuleCaller"
 RULE_NAME="go-naming-polarismesh-e2e-route-rule"
 PORT_STABLE="${PORT_STABLE:-28231}"
-PORT_CANARY="${PORT_CANARY:-28232}"
+PORT_VIP="${PORT_VIP:-28232}"
 CLIENT_LISTEN="${CLIENT_LISTEN:-18231}"
 CLIENT_URL="http://127.0.0.1:${CLIENT_LISTEN}"
 
@@ -29,32 +29,10 @@ route_rule_id() {
         head -n1
 }
 
-enable_route_rule() {
-    local id="$1"
-    local response
-    response="$(api_request PUT /naming/v2/routings/enable \
-        "[{\"id\":\"${id}\",\"enable\":true}]")"
-    if ! api_success "${response}"; then
-        echo "enable route rule ${RULE_NAME} failed: ${response}" >&2
-        return 1
-    fi
-}
-
-build_shared_binaries
-ensure_namespace
-ensure_service "${SERVICE_NAME}"
-start_provider provider-stable "${SERVICE_NAME}" "${PORT_STABLE}" 100 "route=stable" >/dev/null
-start_provider provider-canary "${SERVICE_NAME}" "${PORT_CANARY}" 100 "route=canary" >/dev/null
-wait_for_instances "${SERVICE_NAME}" 2
-start_client "${SERVICE_NAME}" "${CALLER_SERVICE}" >/dev/null
-wait_for_http "${CLIENT_URL}/health"
-
-rule_id="$(route_rule_id)"
-if [[ -n "${rule_id}" ]]; then
-    enable_route_rule "${rule_id}"
-    echo "reuse route rule ${RULE_NAME}" >&2
-else
-    payload="$(jq -cn \
+route_rule_payload() {
+    local id="${1:-}"
+    jq -cn \
+        --arg id "${id}" \
         --arg name "${RULE_NAME}" \
         --arg namespace "${NAMESPACE}" \
         --arg service "${SERVICE_NAME}" \
@@ -69,7 +47,7 @@ else
           routing_config: {
             "@type": "type.googleapis.com/v1.RuleRoutingConfig",
             rules: [{
-              name: "source-segment-blue-to-canary",
+              name: "source-segment-blue-to-vip",
               sources: [{
                 service: $caller,
                 namespace: $namespace
@@ -78,21 +56,49 @@ else
                 service: $service,
                 namespace: $namespace,
                 labels: {
-                  route: {type: "EXACT", value: "canary", value_type: "TEXT"}
+                  route: {type: "EXACT", value: "vip", value_type: "TEXT"}
                 },
                 priority: 0,
                 weight: 100,
-                name: "canary"
+                name: "vip"
               }]
             }]
           }
-        }]')"
+        }]
+        | if $id == "" then . else .[0].id = $id end'
+}
+
+build_shared_binaries
+ensure_namespace
+ensure_service "${SERVICE_NAME}"
+start_provider provider-stable "${SERVICE_NAME}" "${PORT_STABLE}" 100 "route=stable" >/dev/null
+start_provider provider-vip "${SERVICE_NAME}" "${PORT_VIP}" 100 "route=vip" >/dev/null
+wait_for_instances "${SERVICE_NAME}" 2
+start_client "${SERVICE_NAME}" "${CALLER_SERVICE}" >/dev/null
+wait_for_http "${CLIENT_URL}/health"
+
+rule_id="$(route_rule_id)"
+if [[ -n "${rule_id}" ]]; then
+    payload="$(route_rule_payload "${rule_id}")"
+    response="$(api_request PUT /naming/v2/routings "${payload}")"
+    if ! api_success "${response}"; then
+        echo "update route rule ${RULE_NAME} failed: ${response}" >&2
+        exit 1
+    fi
+    echo "reuse route rule ${RULE_NAME}" >&2
+else
+    payload="$(route_rule_payload)"
     response="$(api_request POST /naming/v2/routings "${payload}")"
     if ! api_success "${response}"; then
         # Another run may have created the rule between the query and create.
         rule_id="$(route_rule_id)"
         if [[ -n "${rule_id}" ]]; then
-            enable_route_rule "${rule_id}"
+            payload="$(route_rule_payload "${rule_id}")"
+            response="$(api_request PUT /naming/v2/routings "${payload}")"
+            if ! api_success "${response}"; then
+                echo "update route rule ${RULE_NAME} failed: ${response}" >&2
+                exit 1
+            fi
             echo "reuse route rule ${RULE_NAME}" >&2
         else
             echo "create route rule failed: ${response}" >&2
@@ -103,26 +109,26 @@ else
     fi
 fi
 
-canary_port=":${PORT_CANARY}"
+vip_port=":${PORT_VIP}"
 for _ in $(seq 1 30); do
     result="$(curl -fsS --max-time 60 \
         "${CLIENT_URL}/sequence?mode=service&lb=polaris_wr&count=12")"
-    if jq -e --arg canaryPort "${canary_port}" '
+    if jq -e --arg vipPort "${vip_port}" '
         .successes == 12
         and (.addresses | length) == 1
-        and ([.addresses | keys[] | select(endswith($canaryPort))] | length) == 1
+        and ([.addresses | keys[] | select(endswith($vipPort))] | length) == 1
     ' >/dev/null <<<"${result}"; then
         echo "[case 1.1 source and destination rule] PASS"
         break
     fi
     sleep 1
 done
-if ! jq -e --arg canaryPort "${canary_port}" '
+if ! jq -e --arg vipPort "${vip_port}" '
     .successes == 12
     and (.addresses | length) == 1
-    and ([.addresses | keys[] | select(endswith($canaryPort))] | length) == 1
+        and ([.addresses | keys[] | select(endswith($vipPort))] | length) == 1
 ' >/dev/null <<<"${result}"; then
-    echo "route rule did not select canary: ${result}" >&2
+    echo "route rule did not select vip: ${result}" >&2
     exit 1
 fi
 

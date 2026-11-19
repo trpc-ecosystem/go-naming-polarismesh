@@ -53,8 +53,10 @@ Only when you have signed the Contributor License Agreement, your submitted PR h
 Some things to keep in mind:
 - Ensure that your code conforms to the project's code specifications.
   This includes but is not limited to code style, comment specifications, etc. This helps us to maintain the cleanliness and consistency of the project.
-- Before submitting a PR, please make sure that you have tested your code locally(`go test ./...`).
-  Ensure that the code has no obvious errors and can run normally.
+- Before submitting a PR, run `go mod tidy`, `go build ./...`,
+  `go test ./...`, and `go vet ./...`. Use
+  `go test -race -count=1 ./...` for concurrency, cancellation, or lifecycle
+  changes. Document any check that could not be run.
 - To update the pull request with new code, just push it to the branch;
   you can either add more commits, or rebase and force-push (both styles are accepted).
 - If the request is accepted, all commits will be squashed, and the final commit description will be composed by concatenating the pull request's title and description.
@@ -68,13 +70,10 @@ Commit messages in go-naming-polarismesh follow a specific set of conventions, w
 Here is an example of a good one:
 
 
-> math: improve Sin, Cos and Tan precision for very large arguments
+> polarismesh: preserve instance identity after retry
 >
-> The existing implementation has poor numerical properties for
-> large arguments, so use the McGillicutty algorithm to improve
-> accuracy above 1e10.
->
-> The algorithm is described at https://wikipedia.org/wiki/McGillicutty_Algorithm
+> Reuse the configured stable instance ID after an ambiguous registration
+> failure so cleanup targets the same instance.
 >
 > Fixes #159
 
