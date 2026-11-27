@@ -529,7 +529,7 @@ func TestRegistryMultipleEndpoints(t *testing.T) {
 	p := mock_api.NewMockProviderAPI(ctrl)
 	p.EXPECT().Register(gomock.Any()).DoAndReturn(
 		func(req *api.InstanceRegisterRequest) (*model.InstanceRegisterResponse, error) {
-			require.Equal(t, "10.0.0.1", req.Host)
+			require.Equal(t, "service-host-a", req.Host)
 			require.Equal(t, 8001, req.Port)
 			require.Equal(t, "trpc", *req.Protocol)
 			require.Equal(t, "v1", *req.Version)
@@ -543,7 +543,7 @@ func TestRegistryMultipleEndpoints(t *testing.T) {
 		}).Times(1)
 	p.EXPECT().Register(gomock.Any()).DoAndReturn(
 		func(req *api.InstanceRegisterRequest) (*model.InstanceRegisterResponse, error) {
-			require.Equal(t, "10.0.0.1", req.Host)
+			require.Equal(t, "service-host-a", req.Host)
 			require.Equal(t, 8002, req.Port)
 			require.Equal(t, "http", *req.Protocol)
 			require.Equal(t, "v2", *req.Version)
@@ -564,7 +564,7 @@ func TestRegistryMultipleEndpoints(t *testing.T) {
 		Metadata:       map[string]string{"scope": "service-metadata"},
 		Endpoints: []Endpoint{
 			{
-				Address:      "10.0.0.1:8001",
+				Address:      "service-host-a:8001",
 				Protocol:     "trpc",
 				Version:      "v1",
 				ServiceToken: "token-a",
@@ -574,7 +574,7 @@ func TestRegistryMultipleEndpoints(t *testing.T) {
 				Metadata:     map[string]string{"transport": "trpc"},
 			},
 			{
-				Address:       "10.0.0.1:8002",
+				Address:       "service-host-a:8002",
 				Protocol:      "http",
 				Version:       "v2",
 				ServiceToken:  "token-b",
@@ -614,8 +614,8 @@ func TestRegisterPartialFailureRollsBack(t *testing.T) {
 		EnableRegister: true,
 		ServiceName:    t.Name(),
 		Endpoints: []Endpoint{
-			{Address: "10.0.0.1:8001", Protocol: "trpc", HeartBeat: 2},
-			{Address: "10.0.0.1:8002", Protocol: "http", HeartBeat: 2},
+			{Address: "service-host-a:8001", Protocol: "trpc", HeartBeat: 2},
+			{Address: "service-host-a:8002", Protocol: "http", HeartBeat: 2},
 		},
 	})
 	require.NoError(t, err)
@@ -641,8 +641,8 @@ func TestRegisterRollbackFailureRetainsRetryableInstance(t *testing.T) {
 		EnableRegister: true,
 		ServiceName:    t.Name(),
 		Endpoints: []Endpoint{
-			{Address: "10.0.0.1:8001", Protocol: "trpc", HeartBeat: 2},
-			{Address: "10.0.0.1:8002", Protocol: "http", HeartBeat: 2},
+			{Address: "service-host-a:8001", Protocol: "trpc", HeartBeat: 2},
+			{Address: "service-host-a:8002", Protocol: "http", HeartBeat: 2},
 		},
 	})
 	require.NoError(t, err)
@@ -755,8 +755,8 @@ func TestRegisterRejectsDuplicateEndpointIdentity(t *testing.T) {
 		EnableRegister: true,
 		ServiceName:    t.Name(),
 		Endpoints: []Endpoint{
-			{Address: "10.0.0.1:8001", Protocol: "trpc"},
-			{Address: "10.0.0.1:8001", Protocol: "trpc"},
+			{Address: "service-host-a:8001", Protocol: "trpc"},
+			{Address: "service-host-a:8001", Protocol: "trpc"},
 		},
 	})
 	require.Error(t, err)
@@ -772,8 +772,8 @@ func TestRegisterRejectsSharedAddressWithoutExplicitIDs(t *testing.T) {
 		EnableRegister: true,
 		ServiceName:    t.Name(),
 		Endpoints: []Endpoint{
-			{Address: "10.0.0.1:8001", Protocol: "trpc"},
-			{Address: "10.0.0.1:8001", Protocol: "http"},
+			{Address: "service-host-a:8001", Protocol: "trpc"},
+			{Address: "service-host-a:8001", Protocol: "http"},
 		},
 	})
 	require.Error(t, err)
@@ -787,7 +787,7 @@ func TestRegistryAllowsSharedAddressWithExplicitIDs(t *testing.T) {
 	p := mock_api.NewMockProviderAPI(ctrl)
 	p.EXPECT().Register(gomock.Any()).DoAndReturn(
 		func(req *api.InstanceRegisterRequest) (*model.InstanceRegisterResponse, error) {
-			require.Equal(t, "10.0.0.1:8001", req.Host+":"+fmt.Sprint(req.Port))
+			require.Equal(t, "service-host-a:8001", req.Host+":"+fmt.Sprint(req.Port))
 			require.NotEmpty(t, req.InstanceId)
 			return &model.InstanceRegisterResponse{InstanceID: req.InstanceId}, nil
 		}).Times(2)
@@ -798,8 +798,8 @@ func TestRegistryAllowsSharedAddressWithExplicitIDs(t *testing.T) {
 		ServiceName:        t.Name(),
 		DisableHealthCheck: true,
 		Endpoints: []Endpoint{
-			{Address: "10.0.0.1:8001", Protocol: "trpc", InstanceID: "trpc-id"},
-			{Address: "10.0.0.1:8001", Protocol: "http", InstanceID: "http-id"},
+			{Address: "service-host-a:8001", Protocol: "trpc", InstanceID: "trpc-id"},
+			{Address: "service-host-a:8001", Protocol: "http", InstanceID: "http-id"},
 		},
 	})
 	require.NoError(t, err)
@@ -827,8 +827,8 @@ func TestRegisterRejectsReturnedInstanceIDCollision(t *testing.T) {
 		ServiceName:        t.Name(),
 		DisableHealthCheck: true,
 		Endpoints: []Endpoint{
-			{Address: "10.0.0.1:8001", Protocol: "trpc"},
-			{Address: "10.0.0.1:8002", Protocol: "http"},
+			{Address: "service-host-a:8001", Protocol: "trpc"},
+			{Address: "service-host-a:8002", Protocol: "http"},
 		},
 	})
 	require.NoError(t, err)
@@ -856,8 +856,8 @@ func TestRegisterRejectsReturnedIDReservedByLaterEndpoint(t *testing.T) {
 		ServiceName:        t.Name(),
 		DisableHealthCheck: true,
 		Endpoints: []Endpoint{
-			{Address: "10.0.0.1:8001", Protocol: "trpc"},
-			{Address: "10.0.0.1:8002", Protocol: "http", InstanceID: "reserved-id"},
+			{Address: "service-host-a:8001", Protocol: "trpc"},
+			{Address: "service-host-a:8002", Protocol: "http", InstanceID: "reserved-id"},
 		},
 	})
 	require.NoError(t, err)
@@ -886,8 +886,8 @@ func TestRegisterPreservesOpaqueMetadataWithEndpoints(t *testing.T) {
 		ServiceName:        service,
 		DisableHealthCheck: true,
 		Endpoints: []Endpoint{
-			{Address: "10.0.0.1:8001", Protocol: "trpc", Metadata: metadata},
-			{Address: "10.0.0.1:8002", Protocol: "http", Metadata: metadata},
+			{Address: "service-host-a:8001", Protocol: "trpc", Metadata: metadata},
+			{Address: "service-host-a:8002", Protocol: "http", Metadata: metadata},
 		},
 	})
 	require.NoError(t, err)
@@ -925,7 +925,7 @@ func TestRegistrationSnapshotAppliesAtomicFields(t *testing.T) {
 	r, err := NewRegistry(p, &Config{
 		EnableRegister:     true,
 		ServiceName:        service,
-		BindAddress:        "10.0.0.1:8000",
+		BindAddress:        "service-host-a:8000",
 		Version:            "static-v1",
 		InstanceProtocol:   "trpc",
 		DisableHealthCheck: true,
@@ -958,8 +958,8 @@ func TestRegistrationSnapshotRejectsUnsupportedAtomicFields(t *testing.T) {
 				RegistrationPort: 9000,
 			},
 			endpoints: []Endpoint{
-				{Address: "10.0.0.1:8001", Protocol: "trpc"},
-				{Address: "10.0.0.1:8002", Protocol: "http"},
+				{Address: "service-host-a:8001", Protocol: "trpc"},
+				{Address: "service-host-a:8002", Protocol: "http"},
 			},
 			want: "exactly one endpoint",
 		},
@@ -986,7 +986,7 @@ func TestRegistrationSnapshotRejectsUnsupportedAtomicFields(t *testing.T) {
 
 			endpoints := tt.endpoints
 			if len(endpoints) == 0 {
-				endpoints = []Endpoint{{Address: "10.0.0.1:8000", Protocol: "trpc"}}
+				endpoints = []Endpoint{{Address: "service-host-a:8000", Protocol: "trpc"}}
 			}
 			r, err := NewRegistry(mock_api.NewMockProviderAPI(ctrl), &Config{
 				EnableRegister:     true,
@@ -1017,14 +1017,14 @@ func TestRegisterAcceptsDifferentEndpointMetadata(t *testing.T) {
 		DisableHealthCheck: true,
 		Endpoints: []Endpoint{
 			{
-				Address:  "10.0.0.1:8001",
+				Address:  "service-host-a:8001",
 				Protocol: "http",
 				Metadata: map[string]string{
 					"endpoint-kind": "search",
 				},
 			},
 			{
-				Address:  "10.0.0.1:8002",
+				Address:  "service-host-a:8002",
 				Protocol: "trpc",
 			},
 		},

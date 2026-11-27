@@ -64,9 +64,9 @@ func TestSnapshotCompleteAddressAndProtocolPresence(t *testing.T) {
 		setProtocol  bool
 		wantProtocol string
 	}{
-		{name: "preserve", host: "10.0.0.1", wantProtocol: "trpc"},
-		{name: "explicit empty", host: "10.0.0.1", setProtocol: true},
-		{name: "old nonempty", host: "10.0.0.1", protocol: "http", wantProtocol: "http"},
+		{name: "preserve", host: "service-host-a", wantProtocol: "trpc"},
+		{name: "explicit empty", host: "service-host-a", setProtocol: true},
+		{name: "old nonempty", host: "service-host-a", protocol: "http", wantProtocol: "http"},
 		{name: "IPv6", host: "2001:db8::1", setProtocol: true},
 		{name: "hostname", host: "example.internal", protocol: "tcp", wantProtocol: "tcp"},
 	} {
@@ -113,10 +113,10 @@ func TestSnapshotAddressPrecedenceAndPartialOverrides(t *testing.T) {
 		wantHost   string
 		wantPort   int
 	}{
-		{name: "complete", snapshot: RegistrationSnapshot{Host: "10.0.0.3", RegistrationPort: 9000}, preferBind: true, wantHost: "10.0.0.3", wantPort: 9000},
-		{name: "host only", snapshot: RegistrationSnapshot{Host: "10.0.0.3"}, wantHost: "10.0.0.3", wantPort: 8000},
-		{name: "port only", snapshot: RegistrationSnapshot{RegistrationPort: 9000}, wantHost: "10.0.0.2", wantPort: 9000},
-		{name: "bind", snapshot: RegistrationSnapshot{}, preferBind: true, wantHost: "10.0.0.1", wantPort: 7000},
+		{name: "complete", snapshot: RegistrationSnapshot{Host: "service-host-c", RegistrationPort: 9000}, preferBind: true, wantHost: "service-host-c", wantPort: 9000},
+		{name: "host only", snapshot: RegistrationSnapshot{Host: "service-host-c"}, wantHost: "service-host-c", wantPort: 8000},
+		{name: "port only", snapshot: RegistrationSnapshot{RegistrationPort: 9000}, wantHost: "service-host-b", wantPort: 9000},
+		{name: "bind", snapshot: RegistrationSnapshot{}, preferBind: true, wantHost: "service-host-a", wantPort: 7000},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -130,9 +130,9 @@ func TestSnapshotAddressPrecedenceAndPartialOverrides(t *testing.T) {
 			})
 			p.EXPECT().Deregister(gomock.Any()).Return(nil)
 			r, err := NewRegistry(p, &Config{ServiceName: t.Name(), EnableRegister: true, DisableHealthCheck: true,
-				BindAddress: "10.0.0.1:7000", PreferBindAddress: tt.preferBind})
+				BindAddress: "service-host-a:7000", PreferBindAddress: tt.preferBind})
 			require.NoError(t, err)
-			require.NoError(t, r.Register("", registry.WithAddress("10.0.0.2:8000")))
+			require.NoError(t, r.Register("", registry.WithAddress("service-host-b:8000")))
 			require.NoError(t, r.Deregister(""))
 		})
 	}
@@ -140,18 +140,18 @@ func TestSnapshotAddressPrecedenceAndPartialOverrides(t *testing.T) {
 
 func TestSnapshotInvalidFieldsFailBeforeRPC(t *testing.T) {
 	for _, snapshot := range []RegistrationSnapshot{
-		{Host: "10.0.0.1:8080", RegistrationPort: 9000},
-		{Host: "http://10.0.0.1", RegistrationPort: 9000},
+		{Host: "service-host-a:8080", RegistrationPort: 9000},
+		{Host: "http://service-host-a", RegistrationPort: 9000},
 		{Host: "[::1]", RegistrationPort: 9000},
 		{Host: "bad host", RegistrationPort: 9000},
 		{Host: " ::1", RegistrationPort: 9000},
 		{Host: "::invalid", RegistrationPort: 9000},
-		{Host: "10.0.0.1", RegistrationPort: -1},
-		{Host: "10.0.0.1", RegistrationPort: 65536},
-		{Host: "10.0.0.1"},
+		{Host: "service-host-a", RegistrationPort: -1},
+		{Host: "service-host-a", RegistrationPort: 65536},
+		{Host: "service-host-a"},
 		{RegistrationPort: 9000},
-		{Host: "10.0.0.1", RegistrationPort: 9000, Protocol: " http"},
-		{Host: "10.0.0.1", RegistrationPort: 9000, Protocol: strings.Repeat("x", 33)},
+		{Host: "service-host-a", RegistrationPort: 9000, Protocol: " http"},
+		{Host: "service-host-a", RegistrationPort: 9000, Protocol: strings.Repeat("x", 33)},
 	} {
 		t.Run("invalid", func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -181,18 +181,18 @@ func TestSnapshotMultipleEndpointsAcceptOnlySharedFields(t *testing.T) {
 	}).Times(2)
 	p.EXPECT().Deregister(gomock.Any()).Return(nil).Times(2)
 	r, err := NewRegistry(p, &Config{ServiceName: t.Name(), EnableRegister: true, DisableHealthCheck: true,
-		Endpoints: []Endpoint{{Address: "10.0.0.1:8000", Protocol: "trpc"}, {Address: "10.0.0.2:8001", Protocol: "http"}}})
+		Endpoints: []Endpoint{{Address: "service-host-a:8000", Protocol: "trpc"}, {Address: "service-host-b:8001", Protocol: "http"}}})
 	require.NoError(t, err)
 	require.NoError(t, r.Register(""))
 	require.Equal(t, int32(1), provider.snapshotCalls)
 	require.NoError(t, r.Deregister(""))
-	provider.snapshot.Host = "10.0.0.3"
+	provider.snapshot.Host = "service-host-c"
 	require.ErrorContains(t, r.Register(""), "exactly one endpoint")
 }
 
 func TestSnapshotValidatorUsesCopiesAndSameGeneration(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	provider := &countingSnapshotProvider{snapshot: RegistrationSnapshot{Host: "10.0.0.1", RegistrationPort: 9000,
+	provider := &countingSnapshotProvider{snapshot: RegistrationSnapshot{Host: "service-host-a", RegistrationPort: 9000,
 		Metadata: map[string]string{"generation": "one"}}}
 	provider.validate = func(cfg *Config, snapshot RegistrationSnapshot) error {
 		require.Equal(t, "one", snapshot.Metadata["generation"])
@@ -210,7 +210,7 @@ func TestSnapshotValidatorUsesCopiesAndSameGeneration(t *testing.T) {
 	})
 	p.EXPECT().Deregister(gomock.Any()).Return(nil)
 	r, err := NewRegistry(p, &Config{ServiceName: t.Name(), EnableRegister: true, DisableHealthCheck: true,
-		Metadata: map[string]string{"static": "value"}, Endpoints: []Endpoint{{Address: "10.0.0.2:8000", Metadata: map[string]string{"endpoint": "value"}}}})
+		Metadata: map[string]string{"static": "value"}, Endpoints: []Endpoint{{Address: "service-host-b:8000", Metadata: map[string]string{"endpoint": "value"}}}})
 	require.NoError(t, err)
 	require.NoError(t, r.Register(""))
 	require.Equal(t, int32(1), provider.snapshotCalls)
@@ -224,7 +224,7 @@ func TestSnapshotValidatorUsesCopiesAndSameGeneration(t *testing.T) {
 func TestSnapshotCancelledRegistrationRetainsSafeRollback(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	require.NoError(t, RegisterMetadataProvider(t.Name(), RegistrationSnapshotProviderFunc(func() (RegistrationSnapshot, error) {
-		return RegistrationSnapshot{Host: "10.0.0.1", RegistrationPort: 9000, SetProtocol: true}, nil
+		return RegistrationSnapshot{Host: "service-host-a", RegistrationPort: 9000, SetProtocol: true}, nil
 	})))
 	t.Cleanup(func() { UnregisterMetadataProvider(t.Name()) })
 	p := mock_api.NewMockProviderAPI(ctrl)
@@ -242,7 +242,7 @@ func TestSnapshotCancelledRegistrationRetainsSafeRollback(t *testing.T) {
 
 func TestRegistryConfigReturnsDeepCopy(t *testing.T) {
 	r, err := NewRegistry(nil, &Config{ServiceName: t.Name(), Metadata: map[string]string{"key": "value"},
-		Endpoints: []Endpoint{{Address: "10.0.0.1:8000", Metadata: map[string]string{"nested": "value"}}}})
+		Endpoints: []Endpoint{{Address: "service-host-a:8000", Metadata: map[string]string{"nested": "value"}}}})
 	require.NoError(t, err)
 	copy := r.Config()
 	copy.Metadata["key"] = "changed"
@@ -250,7 +250,7 @@ func TestRegistryConfigReturnsDeepCopy(t *testing.T) {
 	copy.Endpoints[0].Address = "changed"
 	require.Equal(t, "value", r.Config().Metadata["key"])
 	require.Equal(t, "value", r.Config().Endpoints[0].Metadata["nested"])
-	require.Equal(t, "10.0.0.1:8000", r.Config().Endpoints[0].Address)
+	require.Equal(t, "service-host-a:8000", r.Config().Endpoints[0].Address)
 	var nilRegistry *Registry
 	require.Nil(t, nilRegistry.Config())
 }
@@ -259,7 +259,7 @@ func TestServiceYAMLRejectsUnknownFields(t *testing.T) {
 	for _, input := range []string{
 		"service:\n  - name: example\n    removed_option: 1\n",
 		"service:\n  - name: example\n    registration_port: 1\n",
-		"service:\n  - name: example\n    endpoints:\n      - address: 10.0.0.1:8000\n        unknown: true\n",
+		"service:\n  - name: example\n    endpoints:\n      - address: service-host-a:8000\n        unknown: true\n",
 	} {
 		var node yaml.Node
 		require.NoError(t, yaml.Unmarshal([]byte(input), &node))
